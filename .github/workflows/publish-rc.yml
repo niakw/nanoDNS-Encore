@@ -1,6 +1,10 @@
 name: Publish firmware 13.60 standard release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publish-rc.yml
   workflow_dispatch:
 
 permissions:

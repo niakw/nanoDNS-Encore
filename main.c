@@ -1924,7 +1924,7 @@ forward_query_to_upstream(const app_config_t *cfg, const uint8_t *request,
            * configured upstream. NXDOMAIN and NODATA are valid answers. */
           if((reply_question.flags & 0x000f) == 2 ||
              (reply_question.flags & 0x000f) == 5) {
-            log_printf("[nanodns] upstream %s returned failure rcode=%u; trying next\\n",
+            log_printf("[nanodns] upstream %s returned failure rcode=%u; trying next\n",
                        cfg->upstreams[i].text,
                        (unsigned)(reply_question.flags & 0x000f));
             close_upstream_socket(&upstream_fds[i]);
