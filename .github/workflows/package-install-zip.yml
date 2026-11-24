@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   zip-and-publish:
-    if: github.repository == 'niakw/nanoDNS-13.60'
+    if: github.repository == 'niakw/nanoDNS-Encore'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     permissions:

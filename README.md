@@ -4,10 +4,10 @@
 
 ### Stronger DNS enforcement. Cleaner shutdown. One auditable payload.
 
-**124 mandatory protected patterns · Quad9 Secure DNS · Native checks · Safer process lifecycle**
+**124 mandatory protected patterns · Control D + AdGuard DNS · Native checks · Safer process lifecycle**
 
 [![Protected masks](https://img.shields.io/badge/Mandatory_rules-124-394965)](nanodns.ini)
-[![Resolver](https://img.shields.io/badge/DNS-Quad9_secure-456b90)](docs/DNS_POLICY.md)
+[![Resolver](https://img.shields.io/badge/DNS-Control_D%20%2B%20AdGuard-456b90)](docs/DNS_POLICY.md)
 [![License](https://img.shields.io/badge/License-GPL--3.0-555)](LICENSE)
 
 **English (default)** · [Français](README.fr.md)
@@ -18,15 +18,19 @@
 
 ---
 
-## Release 0.4-13.60.2 — security maintenance
+## Release 0.4-13.60.3 — DNS migration (24 November 2026)
 
-**Latest ELF/ZIP: `0.4-13.60.2`; USER-TESTED on firmware 13.60 for startup, configuration loading and blocked A queries.** The user's log confirms 5/5 observed A queries blocked with `0.0.0.0`, 124 rules, zero exceptions and both loopback listeners. **The tester also confirmed a successful normal shutdown and power-on with 0.4-13.60.2**, without recurrence of the original issue. This outcome is user-reported; the DNS log itself has no terminal shutdown marker. Rest/resume, permitted Quad9 lookups, AAAA, repeated cycles and endurance remain unverified. The earlier **0.4-13.60.1** release ([previous release](https://github.com/niakw/nanoDNS-13.60/releases/tag/v0.4-13.60.1-beta.1)) separately passed a shutdown/power-on trial. No other firmware is user-validated.
+**0.4-13.60.3 uses Control D (unfiltered) first and AdGuard DNS (non-filtering) as fallback. NOT YET USER-TESTED on hardware.** Quad9 ceased serving French users on 24 November 2026. New upstream order: `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Each resolver gets its own 1500 ms response window; SERVFAIL/REFUSED also advance to the next resolver. The original 124 mandatory masks remain unchanged. No additional malware or ad filtering is provided by these upstream profiles. Replace both ELF and INI; keep both console DNS fields at `127.0.0.1`.
+
+## Historical Release 0.4-13.60.2 — hardware evidence
+
+**Previous ELF/ZIP: `0.4-13.60.2`; USER-TESTED on firmware 13.60 for startup, configuration loading and blocked A queries.** The user's log confirms 5/5 observed A queries blocked with `0.0.0.0`, 124 rules, zero exceptions and both loopback listeners. **The tester also confirmed a successful normal shutdown and power-on with 0.4-13.60.2**, without recurrence of the original issue. This outcome is user-reported; the DNS log itself has no terminal shutdown marker. Rest/resume, permitted Quad9 lookups, AAAA, repeated cycles and endurance remain unverified. The earlier **0.4-13.60.1** release ([previous release](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.1-beta.1)) separately passed a shutdown/power-on trial. No other firmware is user-validated.
 
 ## Hardware validation status — 19 November 2026
 
 | Target | Real-user hardware status | Scope |
 | --- | --- | --- |
-| Current-generation console, firmware **13.60** | **0.4-13.60.1 and 0.4-13.60.2 USER-TESTED; current version startup, DNS and shutdown/power-on passed** | Prior binary started, filtered A queries, and shut down/restarted without the reported issue. The new ELF passed 5/5 observed blocked A queries on firmware 13.60; user confirms its shutdown/power-on also passed |
+| Current-generation console, firmware **13.60** | **0.4-13.60.1 and 0.4-13.60.2 USER-TESTED; prior version startup, DNS and shutdown/power-on passed; 0.4-13.60.3 retest pending** | Prior binary started, filtered A queries, and shut down/restarted without the reported issue. The 0.4-13.60.2 ELF passed 5/5 observed blocked A queries on firmware 13.60; user confirms its shutdown/power-on also passed |
 | Current-generation console, **other firmware** | **NOT USER-VALIDATED** | SDK compilation and automated tests are not hardware validation |
 | Secondary/older-generation console build, **all firmware** | **NOT USER-VALIDATED** | Successful SDK compilation only; no real-user hardware report |
 
@@ -38,7 +42,7 @@ The two sanitized runtime logs from the **0.4-13.60.1** test showed **23 blocked
 
 A DNS denylist can be edited, replaced or bypassed through local exceptions. A runtime can also fail during duplicate launch or system shutdown.
 
-**nanoDNS 13.60 builds on [Drakmor's original nanoDNS](https://github.com/drakmor/nanoDNS)** and integrates the independent [124-rule Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) **directly into the binary**. Known protected names are evaluated **before** user-defined exceptions, while permitted DNS lookups still use **Quad9 secure upstream resolvers**.
+**nanoDNS 13.60 builds on [Drakmor's original nanoDNS](https://github.com/drakmor/nanoDNS)** and integrates the independent [124-rule Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) **directly into the binary**. Known protected names are evaluated **before** user-defined exceptions, while permitted DNS lookups still use **Control D and AdGuard non-filtering upstream resolvers**.
 
 The goal is stronger **DNS-layer policy enforcement and process reliability** without unnecessarily breaking unrelated Internet access.
 
@@ -48,7 +52,7 @@ The goal is stronger **DNS-layer policy enforcement and process reliability** wi
 | --- | --- | --- | --- |
 | Shipped default deny rules | **8** | **124** in INI | **124 mandatory** masks in binary |
 | Shipped default exceptions | **6** | **0** | No exception can override a mandatory protected name |
-| Upstream DNS | Three mixed resolvers | Quad9 secure pair | **Quad9 secure pair** |
+| Upstream DNS | Three mixed resolvers | Control D + AdGuard | **Ordered Control D, then AdGuard** |
 | Special DNS questions | Original forwarding behavior | Original behavior | Reject unsupported or multiple questions |
 | Upstream reply checks | Basic transaction checking | Original behavior | Validate question identity and protected aliases |
 | Wildcard matching | Recursive | Depends on payload | **Iterative, native regression-tested** |
@@ -73,12 +77,13 @@ DNS query received by nanoDNS
  A: 0.0.0.0        user exceptions
  AAAA: no answer        |
                          v
-                 Quad9 Secure DNS
-                   9.9.9.9
-                149.112.112.112
+                 Control D (unfiltered)
+                  76.76.2.0 / 76.76.10.0
+                 AdGuard (non-filtering)
+                  94.140.14.140 / 94.140.14.141
 ```
 
-No external resolver operator is configured as fallback. Both Quad9 IPs use the **same threat-blocking service**; the payload's upstream transport remains **unencrypted UDP**. [Official Quad9 service details](https://docs.quad9.net/services/).
+Control D and AdGuard provide independent upstream fallback in the configured order. Transport remains **unencrypted UDP**; these profiles do not provide additional malware/ad filtering. [Control D](https://docs.controld.com/docs/free-dns) · [AdGuard](https://adguard-dns.io/en/public-dns.html) · [Quad9 withdrawal](https://quad9.net/news/blog/au-revoir-france/).
 
 ## Built for stability, not risky system patches
 
@@ -94,11 +99,11 @@ No external resolver operator is configured as fallback. Both Quad9 IPs use the 
 
 ## Already using Drakmor's original nanoDNS 0.4?
 
-**Use our single ready-to-copy ZIP:** [**nanoDNS 13.60 installation bundle**](https://github.com/niakw/nanoDNS-13.60/releases/download/v0.4-13.60.2/nanodns-13.60-v0.4-13.60.2-install.zip).
+**Use our single ready-to-copy ZIP:** [**nanoDNS 13.60 installation bundle**](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip).
 
 After backing up the existing ELF/INI, **uninstall the original nanoDNS in Payload Manager or disable it and remove its autoload entry**, stop it through the manager when supported or shut down/restart the console cleanly. Then extract the ZIP on your computer, copy its `data/` tree to the **console filesystem root**, refresh Payload Manager, and enable **only `local/nanodns`** in autoload. **Do not** update the original repository/catalog entry or overwrite its existing `repo/nanodns@e8cce5d1` slot.
 
-[**Step-by-step migration guide (English)**](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Guide français](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [Release and standalone files](https://github.com/niakw/nanoDNS-13.60/releases/tag/v0.4-13.60.2)
+[**Step-by-step migration guide (English)**](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Guide français](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [Release and standalone files](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.3)
 
 ## Installation: ZIP first, English first
 
@@ -111,7 +116,7 @@ The recommended download is a **two-file installation ZIP**. Copy the extracted 
 
 Then refresh Payload Manager, enable only the `local/nanodns` autoload entry, keep **both console DNS fields at `127.0.0.1`**, and verify the new-session logs. The archive **does not** update Payload Manager's autoload on its own. An independent external firewall is still required for strict WAN isolation.
 
-**[Download installation ZIP](https://github.com/niakw/nanoDNS-13.60/releases/download/v0.4-13.60.2/nanodns-13.60-v0.4-13.60.2-install.zip)** · [Complete English instructions](docs/INSTALL.md) · [Guide français](docs/INSTALL.fr.md) · [Validation plan](docs/TEST_PLAN.md)
+**[Download installation ZIP](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip)** · [Complete English instructions](docs/INSTALL.md) · [Guide français](docs/INSTALL.fr.md) · [Validation plan](docs/TEST_PLAN.md)
 
 ## When can this independent project be considered stable?
 
@@ -127,7 +132,7 @@ This is **not a firewall**. Direct IP connections, alternative/encrypted DNS, ca
 
 ## Credits and license
 
-**Original nanoDNS source:** [Drakmor](https://github.com/drakmor/nanoDNS). **Rules and research:** [niakw / Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). **Firmware-specific integration:** [niakw](https://github.com/niakw/nanoDNS-13.60). Community sources are credited in the [provenance document](docs/CREDITS.md). GPL-3.0 preserved. Independent project, not an official device-manufacturer release.
+**Original nanoDNS source:** [Drakmor](https://github.com/drakmor/nanoDNS). **Rules and research:** [niakw / Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). **Firmware-specific integration:** [niakw](https://github.com/niakw/nanoDNS-Encore). Community sources are credited in the [provenance document](docs/CREDITS.md). GPL-3.0 preserved. Independent project, not an official device-manufacturer release.
 
 ---
 

@@ -83,7 +83,7 @@ class PolicyIntegrityTests(unittest.TestCase):
         self.assertNotIn("terminate_existing_instances(", C)
         self.assertNotIn("SO_REUSEADDR", C)
 
-    def test_quad9_exclusive_upstream_defaults(self):
+    def test_ordered_four_upstream_defaults(self):
         def upstreams(ini):
             section = ""
             names = []
@@ -94,12 +94,14 @@ class PolicyIntegrityTests(unittest.TestCase):
                 elif section == "upstream" and line.startswith("server="):
                     names.append(line)
             return names
-        expected = ["server=9.9.9.9", "server=149.112.112.112"]
+        expected = ["server=76.76.2.0", "server=76.76.10.0", "server=94.140.14.140", "server=94.140.14.141"]
         self.assertEqual(upstreams(INI), expected)
         self.assertEqual(upstreams(EXAMPLE), expected)
         self.assertEqual(upstreams(embedded_default()), expected)
-        self.assertIn('config_add_upstream(cfg, "9.9.9.9")', C)
-        self.assertIn('config_add_upstream(cfg, "149.112.112.112")', C)
+        builtin = C.split("config_apply_builtin_upstreams(app_config_t *cfg) {", 1)[1].split("\n}", 1)[0]
+        self.assertEqual(re.findall(r'config_add_upstream\(cfg, "([^"]+)"\)', builtin), ["76.76.2.0", "76.76.10.0", "94.140.14.140", "94.140.14.141"])
+        self.assertNotIn('"9.9.9.9"', C)
+        self.assertNotIn('"149.112.112.112"', C)
         self.assertNotIn('config_add_upstream(cfg, "1.1.1.1")', C)
 
     def test_credit_and_license(self):

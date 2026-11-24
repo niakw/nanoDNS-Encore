@@ -71,7 +71,7 @@ class ConfigTests(unittest.TestCase):
         self.assertIn("bind6=::1", self.parts["general"])
         self.assertEqual(
             [line for line in self.parts["upstream"] if line.startswith("server=")],
-            ["server=9.9.9.9", "server=149.112.112.112"],
+            ["server=76.76.2.0", "server=76.76.10.0", "server=94.140.14.140", "server=94.140.14.141"],
         )
 
     def test_sony_representatives(self):

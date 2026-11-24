@@ -4,7 +4,7 @@
 
 ### Des règles DNS obligatoires, un arrêt plus propre et un payload vérifiable.
 
-**124 motifs protégés intégrés · Quad9 sécurisé · Tests natifs · Cycle de vie fiabilisé**
+**124 motifs protégés intégrés · Control D + AdGuard DNS · Tests natifs · Cycle de vie fiabilisé**
 
 **Langues :** [English (default)](README.md) · Français
 
@@ -14,15 +14,19 @@
 
 ---
 
-## Release 0.4-13.60.2 — maintenance de sécurité
+## Release 0.4-13.60.3 — migration DNS (24 novembre 2026)
 
-**Derniers ELF et ZIP : `0.4-13.60.2`, TEST UTILISATEUR RÉUSSI sur firmware 13.60 pour le démarrage, le chargement des paramètres et le filtrage A.** Le journal confirme 5/5 requêtes A bloquées avec `0.0.0.0`, 124 règles, aucune exception et les écoutes IPv4/IPv6. **Le testeur confirme également une extinction et un rallumage réussis avec 0.4-13.60.2**, sans réapparition de l'anomalie initiale. Ce résultat est rapporté par l'utilisateur et non attesté par un marqueur terminal des journaux. Veille/reprise, DNS autorisé, AAAA, répétitions et endurance restent à vérifier. L'ancienne **0.4-13.60.1** ([Release précédente](https://github.com/niakw/nanoDNS-13.60/releases/tag/v0.4-13.60.1-beta.1)) avait également réussi un essai d'extinction/rallumage. Les autres firmwares restent non validés.
+**0.4-13.60.3 utilise Control D sans filtrage en priorité, AdGuard DNS sans filtrage en secours. Pas encore testé sur console.** Quad9 a cessé de servir les utilisateurs français le 24 novembre 2026. Ordre des DNS : `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Chaque serveur dispose de 1 500 ms de délai de réponse ; SERVFAIL/REFUSED déclenchent également le secours suivant. Les 124 règles obligatoires restent intactes. Aucun filtrage antimalware ou publicitaire supplémentaire par ces profils. Remplacer les deux fichiers ELF et INI ; les deux DNS de la console restent `127.0.0.1`.
+
+## Ancienne Release 0.4-13.60.2 — preuves matérielles
+
+**Anciens ELF et ZIP : `0.4-13.60.2`, TEST UTILISATEUR RÉUSSI sur firmware 13.60 pour le démarrage, le chargement des paramètres et le filtrage A.** Le journal confirme 5/5 requêtes A bloquées avec `0.0.0.0`, 124 règles, aucune exception et les écoutes IPv4/IPv6. **Le testeur confirme également une extinction et un rallumage réussis avec 0.4-13.60.2**, sans réapparition de l'anomalie initiale. Ce résultat est rapporté par l'utilisateur et non attesté par un marqueur terminal des journaux. Veille/reprise, DNS autorisé, AAAA, répétitions et endurance restent à vérifier. L'ancienne **0.4-13.60.1** ([Release précédente](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.1-beta.1)) avait également réussi un essai d'extinction/rallumage. Les autres firmwares restent non validés.
 
 ## Validation matérielle — 19 novembre 2026
 
 | Cible | État des tests utilisateurs | Périmètre |
 | --- | --- | --- |
-| Console de génération actuelle, firmware **13.60** | **0.4-13.60.1 et 0.4-13.60.2 TESTÉS ; démarrage, filtrage A et extinction/rallumage réussis sur la version actuelle** | Le binaire précédent a démarré, bloqué les requêtes A et permis une extinction/rallumage sans anomalie. Le nouvel ELF a bloqué 5/5 requêtes A sur console 13.60 ; son extinction/rallumage a aussi été confirmée par l'utilisateur |
+| Console de génération actuelle, firmware **13.60** | **0.4-13.60.1 et 0.4-13.60.2 TESTÉS ; démarrage, filtrage A et extinction/rallumage réussis sur 0.4-13.60.2 ; 0.4-13.60.3 à retester** | Le binaire précédent a démarré, bloqué les requêtes A et permis une extinction/rallumage sans anomalie. L'ELF 0.4-13.60.2 a bloqué 5/5 requêtes A sur console 13.60 ; son extinction/rallumage a aussi été confirmée par l'utilisateur |
 | Même génération, **autres firmwares** | **NON VALIDÉ PAR UN UTILISATEUR** | La compilation SDK et les tests automatiques ne sont pas des tests sur console |
 | Binaire pour console de génération précédente, **tous firmwares** | **NON VALIDÉ PAR UN UTILISATEUR** | Compilation SDK réussie, mais aucun retour matériel |
 
@@ -34,7 +38,7 @@ Les deux journaux transmis pour **0.4-13.60.1** montrent **23 requêtes A bloqu�
 
 Un fichier de blocklist peut être modifié ou contourné par une exception. Un payload mal géré peut également perturber l'arrêt ou le chargement en double.
 
-**Ce projet indépendant, basé sur [nanoDNS par Drakmor](https://github.com/drakmor/nanoDNS)** intègre les **124 règles** de [niakw Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) **dans le programme lui-même**. Elles sont vérifiées avant les exceptions utilisateur. Les noms autorisés continuent de passer par **Quad9 sécurisé**.
+**Ce projet indépendant, basé sur [nanoDNS par Drakmor](https://github.com/drakmor/nanoDNS)** intègre les **124 règles** de [niakw Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) **dans le programme lui-même**. Elles sont vérifiées avant les exceptions utilisateur. Les noms autorisés continuent de passer par **Control D et AdGuard sans filtrage**.
 
 L'objectif est une protection DNS mieux définie et un fonctionnement plus stable, sans supprimer inutilement l'accès au Web.
 
@@ -44,7 +48,7 @@ L'objectif est une protection DNS mieux définie et un fonctionnement plus stabl
 | --- | --- | --- | --- |
 | Règles livrées par défaut | **8** | **124** | **124 obligatoires compilées** |
 | Exceptions par défaut | **6** | **0** | Ne peuvent pas neutraliser les motifs obligatoires |
-| DNS amont | 3 fournisseurs | Quad9 sécurisé | **Quad9 sécurisé uniquement** |
+| DNS amont | 3 fournisseurs | Control D + AdGuard | **Control D puis AdGuard sans filtrage** |
 | Questions DNS non standards | Comportement d'origine | Hérité | Refus sans retransmission non contrôlée |
 | Réponses des résolveurs | Contrôles d'origine | Hérité | Vérifications supplémentaires des noms et alias |
 | Moteur des masques | Récursif | Hérité | Itératif avec tests natifs |
@@ -55,17 +59,17 @@ L'objectif est une protection DNS mieux définie et un fonctionnement plus stabl
 
 Ces chiffres concernent **les réglages initiaux** de la version d'origine, qui sait également charger une blocklist personnalisée.
 
-## Fonctionnement et Quad9
+## Fonctionnement et DNS amont
 
-Les 124 motifs obligatoires sont évalués avant toute exception. Pour les noms interdits, les requêtes A reçoivent `0.0.0.0` et les AAAA aucune adresse. Les requêtes autorisées sont envoyées à **`9.9.9.9` puis `149.112.112.112`**, deux adresses du **même service sécurisé Quad9**. Le transfert amont du payload utilise toujours de l'UDP non chiffré.
+Les 124 motifs obligatoires sont évalués avant toute exception. Pour les noms interdits, les requêtes A reçoivent `0.0.0.0` et les AAAA aucune adresse. Les requêtes autorisées utilisent `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`, dans cet ordre. Deux fournisseurs sans filtrage supplémentaire, via UDP non chiffré. [Control D](https://docs.controld.com/docs/free-dns) · [AdGuard](https://adguard-dns.io/fr/public-dns.html).
 
 ## Tu utilises déjà le nanoDNS 0.4 officiel ?
 
-**Télécharge notre ZIP complet : [nanoDNS 13.60 prêt à copier](https://github.com/niakw/nanoDNS-13.60/releases/download/v0.4-13.60.2/nanodns-13.60-v0.4-13.60.2-install.zip).** Deux fichiers seulement, avec les bons emplacements.
+**Télécharge notre ZIP complet : [nanoDNS 13.60 prêt à copier](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip).** Deux fichiers seulement, avec les bons emplacements.
 
 Après sauvegarde, **supprime l'ancien nanoDNS depuis Payload Manager ou désactive-le et enlève son autoload**. Arrête ensuite proprement son processus (ou éteins puis redémarre complètement la console). Décompresse le ZIP sur ton Mac, copie son dossier `data/` vers la **racine de la console**, relance Payload Manager et active **seulement `local/nanodns`** en boot auto. **Ne réutilise pas** le bouton Update du nanoDNS officiel ni son ancien dossier `repo/nanodns@e8cce5d1`.
 
-[**Guide de migration pas à pas (français)**](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [English upgrade guide](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Release et fichiers séparés](https://github.com/niakw/nanoDNS-13.60/releases/tag/v0.4-13.60.2)
+[**Guide de migration pas à pas (français)**](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [English upgrade guide](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Release et fichiers séparés](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.3)
 
 ## Fiabilité et installation
 
@@ -80,7 +84,7 @@ Notre version renforce l'application des règles et le cycle de vie du processus
 
 Copie l'arborescence `data/` du ZIP à la **racine `/`**, pas dans `/data/` une seconde fois. Ensuite, actualise Payload Manager, active uniquement `local/nanodns` en autoload et garde les deux DNS console sur `127.0.0.1`. Le ZIP **ne modifie pas automatiquement** le boot auto. Prévois un blocage WAN externe IPv4/IPv6 si tu veux une interdiction stricte des connexions.
 
-**[Télécharger le ZIP](https://github.com/niakw/nanoDNS-13.60/releases/download/v0.4-13.60.2/nanodns-13.60-v0.4-13.60.2-install.zip)** · [Guide français](docs/INSTALL.fr.md) · [English instructions](docs/INSTALL.md) · [Tests console](docs/TEST_PLAN.fr.md)
+**[Télécharger le ZIP](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip)** · [Guide français](docs/INSTALL.fr.md) · [English instructions](docs/INSTALL.md) · [Tests console](docs/TEST_PLAN.fr.md)
 
 ## Notre projet est-il prêt pour un usage stable ?
 
@@ -96,7 +100,7 @@ Aucun DNS local ne peut bloquer toutes les IP directes, les DNS alternatifs ou c
 
 ## Crédits
 
-Code original : [Drakmor](https://github.com/drakmor/nanoDNS). Règles : [niakw Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). Intégration : [niakw](https://github.com/niakw/nanoDNS-13.60). Licence [GPL-3.0](LICENSE), projet communautaire indépendant.
+Code original : [Drakmor](https://github.com/drakmor/nanoDNS). Règles : [niakw Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). Intégration : [niakw](https://github.com/niakw/nanoDNS-Encore). Licence [GPL-3.0](LICENSE), projet communautaire indépendant.
 
 ---
 

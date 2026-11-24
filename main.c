@@ -34,7 +34,7 @@
 #endif
 
 #define APP_NAME "NanoDNS"
-#define APP_VERSION "0.4-13.60.2"
+#define APP_VERSION "0.4-13.60.3"
 #define APP_COPYRIGHT "(c) Drakmor"
 #define DATA_DIR "/data/nanodns"
 #define CONFIG_PATH DATA_DIR "/nanodns.ini"
@@ -158,8 +158,10 @@ static const char *k_default_config =
     "bind6=::1\n"
     "\n"
     "[upstream]\n"
-    "server=9.9.9.9\n"
-    "server=149.112.112.112\n"
+    "server=76.76.2.0\n"
+    "server=76.76.10.0\n"
+    "server=94.140.14.140\n"
+    "server=94.140.14.141\n"
     "timeout_ms=1500\n"
     "\n"
     "[overrides]\n"
@@ -826,8 +828,10 @@ config_add_exception(app_config_t *cfg, const char *mask) {
 static void
 config_apply_builtin_upstreams(app_config_t *cfg) {
   cfg->upstream_count = 0;
-  (void)config_add_upstream(cfg, "9.9.9.9");
-  (void)config_add_upstream(cfg, "149.112.112.112");
+  (void)config_add_upstream(cfg, "76.76.2.0");
+  (void)config_add_upstream(cfg, "76.76.10.0");
+  (void)config_add_upstream(cfg, "94.140.14.140");
+  (void)config_add_upstream(cfg, "94.140.14.141");
 }
 
 static int
@@ -1803,11 +1807,10 @@ forward_query_to_upstream(const app_config_t *cfg, const uint8_t *request,
                           int *upstream_fds,
                           uint8_t *response, size_t response_cap,
                           size_t *response_len, char *via, size_t via_len) {
-  int64_t deadline_ms;
-
-  deadline_ms = now_ms() + cfg->timeout_ms;
-
+  /* Give each configured resolver its own bounded reply window. A silent
+   * primary must not consume the entire backup resolver's budget. */
   for(size_t i = 0; i < cfg->upstream_count && g_running; ++i) {
+    int64_t deadline_ms;
     struct pollfd pfd;
     int fd;
     int poll_rc;
@@ -1850,6 +1853,7 @@ forward_query_to_upstream(const app_config_t *cfg, const uint8_t *request,
     pfd.fd = fd;
     pfd.events = POLLIN;
     pfd.revents = 0;
+    deadline_ms = now_ms() + cfg->timeout_ms;
 
     while(g_running) {
       int64_t timeout_ms = deadline_ms - now_ms();
@@ -1913,6 +1917,16 @@ forward_query_to_upstream(const app_config_t *cfg, const uint8_t *request,
                                              &reply_question)) {
             log_printf("[nanodns] upstream %s returned protected alias; refusing\n",
                        cfg->upstreams[i].text);
+            close_upstream_socket(&upstream_fds[i]);
+            break;
+          }
+          /* SERVFAIL and REFUSED are resolver failures; try the next
+           * configured upstream. NXDOMAIN and NODATA are valid answers. */
+          if((reply_question.flags & 0x000f) == 2 ||
+             (reply_question.flags & 0x000f) == 5) {
+            log_printf("[nanodns] upstream %s returned failure rcode=%u; trying next\\n",
+                       cfg->upstreams[i].text,
+                       (unsigned)(reply_question.flags & 0x000f));
             close_upstream_socket(&upstream_fds[i]);
             break;
           }

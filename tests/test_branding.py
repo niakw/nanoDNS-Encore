@@ -35,7 +35,7 @@ class DocumentationContracts(unittest.TestCase):
   self.assertLess(en.index("(docs/INSTALL.md)"),en.index("(docs/INSTALL.fr.md)"))
   for name in ("README.md","README.fr.md"):
    s=(ROOT/name).read_text(encoding="utf-8")
-   for term in ("124","Quad9","Drakmor"):
+   for term in ("124","Control D","Drakmor"):
     self.assertIn(term,s)
   self.assertIn("hardware",en.lower())
   self.assertIn("not",en.lower())
@@ -44,7 +44,7 @@ class DocumentationContracts(unittest.TestCase):
   en=(ROOT/"docs/INSTALL.md").read_text(encoding="utf-8")
   fr=(ROOT/"docs/INSTALL.fr.md").read_text(encoding="utf-8")
   for s in (en,fr):
-   for token in ("Payload Manager","nanodns.elf","/data/nanodns/nanodns.ini","127.0.0.1","9.9.9.9","149.112.112.112"):
+   for token in ("Payload Manager","nanodns.elf","/data/nanodns/nanodns.ini","127.0.0.1","76.76.2.0","76.76.10.0","94.140.14.140","94.140.14.141"):
     self.assertIn(token,s)
   for token in ("Drakmor","original","autoload","Rollback"):
    self.assertIn(token,en)
@@ -62,14 +62,14 @@ class DocumentationContracts(unittest.TestCase):
    for path in paths:
     self.assertIn(path,s)
    self.assertIn("local/nanodns",s)
-   self.assertIn("nanodns-13.60-v0.4-13.60.2-install.zip",s)
+   self.assertIn("nanodns-13.60-v0.4-13.60.3-install.zip",s)
   for s in (en,fr):
    self.assertIn("nanodns@e8cce5d1",s)
    self.assertIn("Payload Manager",s)
    self.assertIn("autoload",s)
    self.assertIn("/data/data/",s)
   for s in ((ROOT/"README.md").read_text(encoding="utf-8"),(ROOT/"README.fr.md").read_text(encoding="utf-8")):
-   self.assertIn("nanodns-13.60-v0.4-13.60.2-install.zip",s)
+   self.assertIn("nanodns-13.60-v0.4-13.60.3-install.zip",s)
    self.assertIn("local/nanodns",s)
 
  def test_hardware_user_test_status_is_scoped(self):
@@ -117,9 +117,12 @@ class DocumentationContracts(unittest.TestCase):
   publisher=(ROOT/".github/workflows/publish-rc.yml").read_text(encoding="utf-8")
   self.assertIn("dist/nanodns.elf",publisher)
   self.assertIn("dist/nanodns-ps4.elf",publisher)
-  self.assertIn("nanodns-13.60-v0.4-13.60.2-install.zip",publisher)
+  self.assertIn("nanodns-13.60-v0.4-13.60.3-install.zip",publisher)
   self.assertIn("--latest",publisher)
-  self.assertIn("v0.4-13.60.2",notes)
+  self.assertIn("v0.4-13.60.3",notes)
+  self.assertIn("0.4-13.60.3",en)
+  self.assertIn("0.4-13.60.3",fr)
+  self.assertIn("NOT YET USER-TESTED",notes)
   self.assertIn("0.4-13.60.1",notes)
 
  def test_project_community_documents_are_complete(self):
