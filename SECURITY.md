@@ -10,7 +10,7 @@ The payload additionally validates upstream reply identity, blocks protected ali
 
 ## DNS upstream trust
 
-The bundled policy uses only Quad9's **secure service** at `9.9.9.9` and `149.112.112.112`, two addresses belonging to the same operator. These are **unencrypted UDP DNS** upstreams, and any existing user INI needs explicit replacement to adopt them. Quad9 malware filtering and DNSSEC validation do not turn nanoDNS into a network firewall.
+The bundled policy uses Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted. Existing user INIs must be explicitly replaced to adopt the new defaults. DNS-only filtering is not a firewall.
 
 ## What it does not protect
 

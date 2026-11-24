@@ -2,6 +2,12 @@
 
 **Langues :** [English (default)](CHANGELOG.md) | Français
 
+## 0.4-13.60.3 — migration DNS (24 novembre 2026)
+
+- Remplacement de Quad9 après son retrait de France : Control D sans filtrage, puis AdGuard DNS sans filtrage, dans l'ordre `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Aucun filtrage antimalware/publicitaire supplémentaire ; les règles locales restent inchangées. DNS UDP non chiffré.
+- Délai indépendant par serveur ; passage au suivant sur SERVFAIL ou REFUSED, conservation des réponses négatives valides.
+- 124 motifs obligatoires, zéro exception et écoutes locales inchangés. Reconstruction ELF/ZIP ; nouveau test matériel en attente.
+
 ## 0.4-13.60.2 — Release standard, test utilisateur de base réussi sur firmware 13.60 (19 novembre 2026)
 
 - Suppression de la course `stat()` / `fopen("w")` lors de la création du `nanodns.ini` : ouverture atomique `O_CREAT | O_EXCL | O_NOFOLLOW`, permissions initiales restreintes, aucun écrasement du fichier existant.

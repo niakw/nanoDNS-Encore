@@ -6,7 +6,7 @@ Thanks for helping improve this independent GPL-3.0 DNS payload, based on [Drakm
 
 ## Scope and priorities
 
-- Protect the existing **124 mandatory DNS masks**, which must be applied before user exceptions; don't silently change the blocklist, its semantics or the Quad9 profile.
+- Protect the existing **124 mandatory DNS masks**, which must be applied before user exceptions; don't silently change the blocklist, its semantics or the ordered Control D/AdGuard profile.
 - Improve reliability without killing unrelated processes or adding guessed firmware-specific kernel offsets.
 - Preserve the documented local installation paths, Payload Manager migration steps and two-file release ZIP.
 - Treat real-console validation **firmware by firmware**. Basic functionality was user-tested on firmware 13.60; other firmware and the secondary console build remain unverified until independent user tests exist.
@@ -14,7 +14,7 @@ Thanks for helping improve this independent GPL-3.0 DNS payload, based on [Drakm
 
 ## Changes and verification
 
-1. Open a focused [bug report or feature request](https://github.com/niakw/nanoDNS-13.60/issues/new/choose) or link an existing issue.
+1. Open a focused [bug report or feature request](https://github.com/niakw/nanoDNS-Encore/issues/new/choose) or link an existing issue.
 2. Work in a dedicated branch and explain the bug, intended behavior, risk, rollback, and files modified.
 3. Run the available host checks:
    ```sh

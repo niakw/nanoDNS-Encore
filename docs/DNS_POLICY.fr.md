@@ -22,7 +22,7 @@ Une réponse malformée est refusée plutôt que retransmise. Cela ne constitue 
 
 - **124 règles ; aucune exception**.
 - Blocage de noms connus platform vendor/platform services, additional console networks, additional console networks, publisher services, publisher services, publisher services, publisher services, publisher services, publisher services, publisher services, etc.
-- DNS amont : **Quad9 uniquement**, `9.9.9.9` (prioritaire) puis `149.112.112.112` (secours), pour les noms autorisés seulement. Les deux adresses appartiennent au **même fournisseur** ; nanoDNS transmet en DNS UDP non chiffré. Quad9 applique son filtrage des domaines malveillants et la validation DNSSEC.
+- **DNS amont dans l'ordre :** Control D sans filtrage, puis AdGuard DNS sans filtrage, dans l'ordre `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Aucun filtrage antimalware/publicitaire supplémentaire ; les règles locales restent inchangées. DNS UDP non chiffré. Quad9 a quitté la France le 24 novembre 2026 ([annonce](https://quad9.net/fr/news/blog/au-revoir-france/)). Le délai s'applique par serveur ; SERVFAIL et REFUSED déclenchent le secours suivant.
 - Écoutes locales : `127.0.0.1:53` et `[::1]:53`.
 - Les noms non interdits, comme `github.com`, peuvent continuer à être résolus.
 

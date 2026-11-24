@@ -14,10 +14,10 @@ The rule snapshot is used in both `nanodns.ini` and the native protected-mask ar
 
 ## DNS upstream
 
-The default primary and backup secure DNS resolvers are from [Quad9](https://quad9.net/service/service-addresses-and-features/). Both addresses belong to Quad9; they are not independent service providers. Quad9 is not the maintainer of this fork.
+Default resolvers: [Control D](https://docs.controld.com/docs/free-dns) (unfiltered) and [AdGuard DNS](https://adguard-dns.io/en/public-dns.html) (non-filtering). Neither provider maintains this project. Quad9 was used in earlier releases.
 
 ## Integration
 
-This firmware-13.60-focused integration is maintained in [niakw/nanoDNS-13.60](https://github.com/niakw/nanoDNS-13.60). It is not an official Drakmor release and has no platform vendor, additional console networks or platform operator affiliation.
+This firmware-13.60-focused integration is maintained in [niakw/nanoDNS-Encore](https://github.com/niakw/nanoDNS-Encore). It is not an official Drakmor release and has no platform vendor, additional console networks or platform operator affiliation.
 
 The fork does not add third-party proprietary assets. Source and modifications remain subject to [GPL-3.0](../LICENSE).

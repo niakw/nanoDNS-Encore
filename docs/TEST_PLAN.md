@@ -4,6 +4,10 @@
 
 **Status: standard GitHub Release; one positive firmware 13.60 user test, with further validation pending.** Source tests and SDK builds alone cannot establish that console shutdown, controller power-on or standby are fixed.
 
+## Release 0.4-13.60.3 — DNS migration, hardware retest pending
+
+On 24 November 2026 Quad9 was replaced with Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted. Verify four upstreams in the log, the unchanged 124/0 profile, a permitted query through Control D and failover to AdGuard when prior resolvers are unavailable. Test timeout and SERVFAIL/REFUSED failover; NXDOMAIN remains valid. The new binary is not user-tested; the following reports apply only to previous binaries.
+
 ## Release 0.4-13.60.2 — user hardware test (19 November 2026)
 
 **USER-TESTED: startup and mandatory A-query DNS blocking PASSED on console firmware 13.60.** The submitted log identifies `NanoDNS v0.4-13.60.2`, built Nov 19 2026 15:34:13.
@@ -38,7 +42,7 @@ Two user-supplied log generations (`nanodns.log` and `nanodns.log.previous`) sho
 
 ## 1. Offline and CI checks
 
-- `python3 -m unittest discover -s tests -v`: verify the 124 mandatory masks, zero-exception default profile, matching INI files, Quad9 addresses and native matching tests.
+- `python3 -m unittest discover -s tests -v`: verify the 124 mandatory masks, zero-exception default profile, matching INI files, ordered Control D/AdGuard addresses and native matching tests.
 - Build the console ELF with the supported SDK; verify the artifact exists and is non-empty. Also compile the secondary compatibility target.
 - Check the current **main commit**, not only an older successful run. Never present a build as validated hardware behavior.
 

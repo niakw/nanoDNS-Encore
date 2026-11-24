@@ -21,7 +21,7 @@ The fork contains three synchronized snapshots: `nanodns.ini`, `nanodns.ini.exam
 ## Original source profile
 
 - **124 rules** / **0 exceptions**, with broad platform services / platform vendor / additional console networks patterns, additional console networks, publisher services, publisher services, publisher services, publisher services, publisher services, publisher services, publisher services and other publishers.
-- **Quad9-only secure upstreams** for otherwise permitted names: `9.9.9.9` (primary) and `149.112.112.112` (backup), with malware/phishing blocking and DNSSEC validation performed by Quad9. Both IPs belong to **the same provider**, and nanoDNS forwards using ordinary (unencrypted) UDP DNS.
+- **Ordered upstreams:** Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted. Quad9 ceased serving users in France on 24 November 2026 ([announcement](https://quad9.net/news/blog/au-revoir-france/)). Each upstream has its own timeout; SERVFAIL and REFUSED trigger the next resolver.
 - Local listeners: `127.0.0.1:53` and `[::1]:53`.
 - The list deliberately leaves e.g. GitHub and YouTube resolvable if the console actually uses this resolver.
 

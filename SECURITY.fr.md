@@ -10,7 +10,7 @@ Le programme vérifie également les réponses des résolveurs amont, refuse cer
 
 ## Confiance dans les DNS amont
 
-La configuration distribuée utilise uniquement le service sécurisé Quad9 : `9.9.9.9` et `149.112.112.112`. Ce sont deux adresses du **même fournisseur**, sollicitées via DNS UDP non chiffré. Une ancienne configuration personnalisée doit être remplacée explicitement. Le filtrage des domaines malveillants et la validation DNSSEC côté Quad9 ne constituent pas un pare-feu.
+La configuration distribuée utilise Control D sans filtrage, puis AdGuard DNS sans filtrage, dans l'ordre `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Aucun filtrage antimalware/publicitaire supplémentaire ; les règles locales restent inchangées. DNS UDP non chiffré. Les anciens INI doivent être remplacés explicitement. Le filtrage DNS ne constitue pas un pare-feu.
 
 ## Ce que cette protection ne couvre pas
 

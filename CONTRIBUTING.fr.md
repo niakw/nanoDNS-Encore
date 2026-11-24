@@ -6,7 +6,7 @@ Merci de contribuer à ce payload DNS indépendant, distribué sous GPL-3.0 et b
 
 ## Objectifs et limites
 
-- Conserver les **124 motifs DNS obligatoires**, évalués avant les exceptions ; ne pas changer silencieusement la blocklist ni la configuration Quad9.
+- Conserver les **124 motifs DNS obligatoires**, évalués avant les exceptions ; ne pas changer silencieusement la blocklist ni le profil Control D/AdGuard ordonné.
 - Fiabiliser le cycle de vie du processus sans tuer les autres processus ni ajouter d'offsets noyau supposés.
 - Préserver les chemins d'installation et la migration Payload Manager, ainsi que le ZIP de deux fichiers.
 - Vérifier le matériel **firmware par firmware** : le fonctionnement de base sur 13.60 bénéficie d'un test utilisateur positif ; les autres firmwares et le binaire secondaire ne sont pas validés sans nouveaux essais.
@@ -14,7 +14,7 @@ Merci de contribuer à ce payload DNS indépendant, distribué sous GPL-3.0 et b
 
 ## Proposer une modification
 
-1. Crée une [issue ciblée](https://github.com/niakw/nanoDNS-13.60/issues/new/choose) ou référence une issue existante.
+1. Crée une [issue ciblée](https://github.com/niakw/nanoDNS-Encore/issues/new/choose) ou référence une issue existante.
 2. Travaille dans une branche dédiée en décrivant cause, effet attendu, risque et retour arrière.
 3. Lance les tests disponibles :
    ```sh

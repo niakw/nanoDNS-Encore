@@ -14,8 +14,8 @@ La liste figure dans le fichier `nanodns.ini` et dans le code source du binaire.
 
 ## DNS amont
 
-Les adresses des résolveurs sécurisés proviennent de [Quad9](https://quad9.net/fr/service/service-addresses-and-features/). Le DNS principal et celui de secours appartiennent au **même fournisseur** ; Quad9 n'est pas mainteneur de ce fork.
+Résolveurs par défaut : [Control D](https://docs.controld.com/docs/free-dns) et [AdGuard DNS](https://adguard-dns.io/fr/public-dns.html), profils sans filtrage. Aucun de ces fournisseurs ne maintient le projet. Quad9 était utilisé dans les versions antérieures.
 
 ## Intégration 13.60
 
-Le fork [niakw/nanoDNS-13.60](https://github.com/niakw/nanoDNS-13.60) vise la fiabilité et la sécurité du payload sur firmware console 13.60. Il ne constitue pas une publication officielle de Drakmor, platform vendor, additional console networks ou platform operator. Il ne contient pas d'actifs propriétaires supplémentaires et reste soumis à la licence [GPL-3.0](../LICENSE).
+Le fork [niakw/nanoDNS-Encore](https://github.com/niakw/nanoDNS-Encore) vise la fiabilité et la sécurité du payload sur firmware console 13.60. Il ne constitue pas une publication officielle de Drakmor, platform vendor, additional console networks ou platform operator. Il ne contient pas d'actifs propriétaires supplémentaires et reste soumis à la licence [GPL-3.0](../LICENSE).

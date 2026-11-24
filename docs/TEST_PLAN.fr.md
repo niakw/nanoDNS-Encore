@@ -4,6 +4,10 @@
 
 **Statut : Release GitHub standard ; premier test utilisateur positif sur firmware 13.60, autres vérifications en attente.** Un build seul ne prouve ni une extinction correcte, ni un réveil à la manette, ni une reprise de veille fiable.
 
+## Release 0.4-13.60.3 — migration DNS, nouvel essai matériel nécessaire
+
+Depuis le 24 novembre 2026 : Control D sans filtrage, puis AdGuard DNS sans filtrage, dans l'ordre `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Aucun filtrage antimalware/publicitaire supplémentaire ; les règles locales restent inchangées. DNS UDP non chiffré. Vérifier les quatre DNS amont, 124 règles et zéro exception, une résolution autorisée via Control D et le secours AdGuard si les DNS précédents sont indisponibles. Tester timeout et SERVFAIL/REFUSED ; NXDOMAIN reste valide. Le nouveau binaire n'est pas encore testé par utilisateur ; les résultats ci-dessous concernent les anciennes versions.
+
 ## Release 0.4-13.60.2 — test utilisateur du 19 novembre 2026
 
 **TEST UTILISATEUR RÉUSSI pour le démarrage et le filtrage DNS A obligatoire sur firmware 13.60.** Journal `NanoDNS v0.4-13.60.2`, compilation du 19 novembre 2026 à 15:34:13.
@@ -38,7 +42,7 @@ Deux générations de journaux transmises (`nanodns.log` et `nanodns.log.previou
 
 ## 1. Vérifications automatiques
 
-- `python3 -m unittest discover -s tests -v` : cohérence des 124 règles obligatoires, absence d'exceptions par défaut, correspondance entre INI et code, adresses Quad9 et tests natifs.
+- `python3 -m unittest discover -s tests -v` : cohérence des 124 règles obligatoires, absence d'exceptions par défaut, correspondance entre INI et code, adresses Control D/AdGuard dans l'ordre et tests natifs.
 - Compiler l'ELF avec le SDK compatible, vérifier sa présence et sa taille, puis vérifier aussi la compilation secondaire.
 - Contrôler le commit `main` actuel, pas uniquement un ancien build vert.
 
@@ -57,7 +61,7 @@ Vérifier qu'un seul mécanisme d'autoload est actif et qu'une seule instance na
 | Domaine historiquement exempté mais présent parmi les motifs obligatoires | Bloqué malgré une ancienne exception |
 | Autres domaines de services ou d'éditeurs protégés par l'INI | Bloqués conformément aux motifs |
 | Plusieurs questions, classe ou opcode non pris en charge | Rejet, aucune retransmission non contrôlée |
-| Domaine autorisé comme `github.com` | Résolution via Quad9 si WAN volontairement activé |
+| Domaine autorisé comme `github.com` | Résolution via Control D ou AdGuard si WAN volontairement activé |
 | CNAME amont dirigé vers un nom protégé | Rejet et absence de relais vers le client |
 | Double lancement du payload | Le premier écouteur demeure, le second ne récupère pas le port 53 |
 | Fichier INI absent ou invalide | Liste obligatoire compilée toujours appliquée |

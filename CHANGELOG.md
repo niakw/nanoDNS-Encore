@@ -2,6 +2,12 @@
 
 
 **Language:** English (default) | [Français](CHANGELOG.fr.md)
+## 0.4-13.60.3 — DNS migration (2026-11-24)
+
+- Replace Quad9 after its withdrawal from France: Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted.
+- Give each upstream an independent response window; advance after SERVFAIL or REFUSED, preserving valid negative DNS answers.
+- Keep all 124 mandatory masks, zero default exceptions and existing local DNS bindings. Rebuild ELF/ZIP; user hardware retest pending.
+
 ## 0.4-13.60.2 — standard GitHub Release, basic firmware 13.60 user test passed (2026-11-19)
 
 - Avoid a time-of-check/time-of-use race when generating the default `nanodns.ini`: create with `O_CREAT | O_EXCL | O_NOFOLLOW` and restrictive initial file permissions, without overwriting an existing configuration.
