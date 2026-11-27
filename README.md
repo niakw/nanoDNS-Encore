@@ -18,6 +18,10 @@
 
 ---
 
+## Current source after 0.4-13.60.3
+
+`main` no longer has the historical 128-entry override/exception tables. Runtime overrides and exceptions now use bounded dynamic storage, with the whole INI capped at 64 KiB; host tests exercise 512 overrides plus 512 exceptions under ASan/UBSan. The **published 0.4-13.60.3 ELF still has the old 128-entry tables** until a new binary is built and hardware-qualified. The 124 mandatory masks remain compiled separately and keep priority.
+
 ## Release 0.4-13.60.3 — DNS migration (24 November 2026)
 
 **0.4-13.60.3 uses Control D (unfiltered) first and AdGuard DNS (non-filtering) as fallback. NOT YET USER-TESTED on hardware.** Quad9 ceased serving French users on 24 November 2026. New upstream order: `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Each resolver gets its own 1500 ms response window; SERVFAIL/REFUSED also advance to the next resolver. The original 124 mandatory masks remain unchanged. No additional malware or ad filtering is provided by these upstream profiles. Replace both ELF and INI; keep both console DNS fields at `127.0.0.1`.
