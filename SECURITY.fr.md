@@ -34,7 +34,7 @@ Un **build vert** ne confirme pas la résolution des problèmes d'extinction de 
 
 ## Durcissement de la configuration sur le code source actuel
 
-Le code `main` n'utilise plus un tableau fixe de 128 entrées pour les overrides. Les règles sont désormais allouées dynamiquement sur le tas pendant la lecture de l'INI ; le fichier est borné à 64 Kio afin de limiter le travail de parsing et la consommation mémoire. Les 124 motifs obligatoires restent compilés séparément dans l'ELF et ne dépendent donc pas de cette capacité. L'ELF publié en 0.4-13.60.3 est antérieur à ce refactoring et conserve la table historique de 128 entrées. Cette modification du code source devra être reconstruite et qualifiée sur console avant d'être présentée comme un comportement de Release.
+Le code `main` n'utilise plus de tableaux fixes de 128 entrées pour les overrides ou les exceptions. Ces deux listes sont désormais allouées dynamiquement sur le tas pendant la lecture de l'INI ; le fichier est borné à 64 Kio afin de limiter le travail de parsing et la consommation mémoire. Les 124 motifs obligatoires restent compilés séparément dans l'ELF et ne dépendent donc pas de cette capacité. L'ELF publié en 0.4-13.60.3 est antérieur à ce refactoring et conserve la table historique de 128 entrées. Cette modification du code source devra être reconstruite et qualifiée sur console avant d'être présentée comme un comportement de Release.
 
 ## Protection du fichier de configuration (code après la Release 13.60)
 
