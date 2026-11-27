@@ -21,7 +21,7 @@ class DynamicRuleCapacity(unittest.TestCase):
         self.assertIsNotNone(cc)
 
         defines = "\n".join(
-            extract(rf"^#define {name} .*$", name)
+            extract(rf"^#define {name} [^\\n]*$", name)
             for name in (
                 "MAX_UPSTREAMS", "MAX_EXCEPTIONS", "INITIAL_RULE_CAPACITY",
                 "MAX_CONFIG_WARNINGS", "MAX_CONFIG_WARNING_LEN",
