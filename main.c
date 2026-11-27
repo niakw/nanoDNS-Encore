@@ -43,9 +43,9 @@
 #define DNS_PORT 53
 #define MAX_DNS_PACKET 4096
 #define MAX_UPSTREAMS 8
-#define MAX_EXCEPTIONS 128
 #define MAX_CONFIG_FILE_BYTES (64u * 1024u)
 #define INITIAL_RULE_CAPACITY 16u
+#define INITIAL_EXCEPTION_CAPACITY 8u
 #define MAX_CONFIG_WARNINGS 128
 #define MAX_CONFIG_WARNING_LEN 256
 #define MAX_DOMAIN_LEN 256
@@ -97,8 +97,9 @@ typedef struct {
   override_rule_t *rules;
   size_t rule_count;
   size_t rule_capacity;
-  exception_rule_t exceptions[MAX_EXCEPTIONS];
+  exception_rule_t *exceptions;
   size_t exception_count;
+  size_t exception_capacity;
   int timeout_ms;
   int debug_enabled;
   int quiet_enabled;
@@ -794,6 +795,10 @@ config_release(app_config_t *cfg) {
   cfg->rules = NULL;
   cfg->rule_count = 0;
   cfg->rule_capacity = 0;
+  free(cfg->exceptions);
+  cfg->exceptions = NULL;
+  cfg->exception_count = 0;
+  cfg->exception_capacity = 0;
 }
 
 static int
@@ -832,18 +837,36 @@ config_add_rule(app_config_t *cfg, const char *mask, const char *ip) {
   return 0;
 }
 
-static void
+static int
 config_add_exception(app_config_t *cfg, const char *mask) {
   exception_rule_t *rule;
 
-  if(cfg->exception_count >= MAX_EXCEPTIONS) {
-    return;
+  if(strlen(mask) >= sizeof(((exception_rule_t *)0)->mask)) {
+    return -3;
+  }
+
+  if(cfg->exception_count == cfg->exception_capacity) {
+    size_t next_capacity =
+        cfg->exception_capacity == 0 ? INITIAL_EXCEPTION_CAPACITY :
+        cfg->exception_capacity * 2u;
+    if(next_capacity < cfg->exception_capacity ||
+       next_capacity > SIZE_MAX / sizeof(*cfg->exceptions)) {
+      return -4;
+    }
+    exception_rule_t *next =
+        realloc(cfg->exceptions, next_capacity * sizeof(*cfg->exceptions));
+    if(next == NULL) {
+      return -4;
+    }
+    cfg->exceptions = next;
+    cfg->exception_capacity = next_capacity;
   }
 
   rule = &cfg->exceptions[cfg->exception_count];
   snprintf(rule->mask, sizeof(rule->mask), "%s", mask);
   normalize_domain(rule->mask, rule->mask, sizeof(rule->mask));
   ++cfg->exception_count;
+  return 0;
 }
 
 /* No built-in exceptions: protected domains must never be forwarded. */
@@ -1036,12 +1059,15 @@ load_config(const char *path, app_config_t *cfg) {
 
       key = trim(s);
       if(*key != '\0') {
-        size_t before = cfg->exception_count;
-        config_add_exception(cfg, key);
-        if(cfg->exception_count == before) {
+        int rc = config_add_exception(cfg, key);
+        if(rc == -3) {
           config_add_warning(cfg,
-                             "[nanodns] warning: %s:%zu too many exception rules, ignoring '%s'\n",
+                             "[nanodns] warning: %s:%zu exception mask too long, ignoring '%s'\n",
                              path, line_no, key);
+        } else if(rc == -4) {
+          (void)fclose(fp);
+          errno = ENOMEM;
+          return -1;
         }
       }
       continue;
