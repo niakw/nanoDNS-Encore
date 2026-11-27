@@ -4,8 +4,8 @@
 
 ## Non publié — code source après 0.4-13.60.3
 
-- Remplacement du tableau fixe `MAX_RULES=128` par un stockage dynamique des overrides sur le tas. Le fichier INI est limité à 64 Kio au lieu de tronquer silencieusement les règles au-delà de 128 ; les 124 motifs obligatoires restent une politique compilée séparée et gardent leur priorité.
-- Cette évolution reste limitée au code source jusqu'à reconstruction et qualification d'un nouvel ELF pour console de génération actuelle ; l'ELF 0.4-13.60.3 publié conserve la table historique de 128 entrées.
+- Remplacement des tableaux fixes `MAX_RULES=128` et `MAX_EXCEPTIONS=128` par un stockage dynamique des overrides et exceptions sur le tas. Le fichier INI est limité à 64 Kio au lieu de tronquer silencieusement les règles au-delà de 128 ; les 124 motifs obligatoires restent une politique compilée séparée et gardent leur priorité.
+- Cette évolution reste limitée au code source jusqu'à reconstruction et qualification d'un nouvel ELF pour console de génération actuelle ; l'ELF 0.4-13.60.3 publié conserve les tables historiques de 128 overrides et 128 exceptions.
 
 ## 0.4-13.60.3 — migration DNS (24 novembre 2026)
 
