@@ -35,7 +35,7 @@ If you need *no unfiltered outbound traffic*, enforce WAN-deny rules on your **r
 
 ## Runtime configuration hardening on current source
 
-The current `main` source no longer stores overrides in a fixed 128-entry stack array. Override entries are allocated on the heap as the configuration is parsed; the INI itself is bounded to 64 KiB to keep memory use and parsing work finite. The 124 mandatory masks remain separately compiled into the ELF and therefore do not depend on user override capacity. The published 0.4-13.60.3 binary predates this refactor and still has the historical 128-entry override table. This source change requires a new build and hardware qualification before it is presented as a release behavior.
+The current `main` source no longer stores overrides or exceptions in fixed 128-entry stack arrays. Both policy lists are allocated on the heap as the configuration is parsed; the INI itself is bounded to 64 KiB to keep memory use and parsing work finite. The 124 mandatory masks remain separately compiled into the ELF and therefore do not depend on user override capacity. The published 0.4-13.60.3 binary predates this refactor and still has the historical 128-entry override and 128-entry exception tables. This source change requires a new build and hardware qualification before it is presented as a release behavior.
 
 ## Default configuration file protection (source after the 13.60 release)
 
