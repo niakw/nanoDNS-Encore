@@ -25,12 +25,16 @@ jobs:
         with:
           repository: ps5-payload-dev/sdk
           path: sdk
+          ref: 4122b714c7e7a9449d403812b9d640bf7a55af3f
 
       - name: Setup SDK
         working-directory: sdk
         run: |
-          sudo apt update
-          sudo apt install -y clang-18 lld-18
+          # Hosted runners can carry unrelated third-party APT feeds. They
+          # must not make console builds fail before our toolchain is touched.
+          grep -rl 'packages.microsoft.com' /etc/apt/sources.list.d 2>/dev/null | xargs -r sudo rm -f
+          sudo apt-get update
+          sudo apt-get install -y clang-18 lld-18
           make DESTDIR=${{ runner.tool_cache }}/ps5-payload-sdk clean install
           echo PS5_PAYLOAD_SDK=${{ runner.tool_cache }}/ps5-payload-sdk >> $GITHUB_ENV
 
