@@ -2,6 +2,11 @@
 
 **Langues :** [English (default)](CHANGELOG.md) | Français
 
+## Non publié — code source après 0.4-13.60.3
+
+- Remplacement du tableau fixe `MAX_RULES=128` par un stockage dynamique des overrides sur le tas. Le fichier INI est limité à 64 Kio au lieu de tronquer silencieusement les règles au-delà de 128 ; les 124 motifs obligatoires restent une politique compilée séparée et gardent leur priorité.
+- Cette évolution reste limitée au code source jusqu'à reconstruction et qualification d'un nouvel ELF PS5 ; l'ELF 0.4-13.60.3 publié conserve la table historique de 128 entrées.
+
 ## 0.4-13.60.3 — migration DNS (24 novembre 2026)
 
 - Remplacement de Quad9 après son retrait de France : Control D sans filtrage, puis AdGuard DNS sans filtrage, dans l'ordre `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Aucun filtrage antimalware/publicitaire supplémentaire ; les règles locales restent inchangées. DNS UDP non chiffré.
