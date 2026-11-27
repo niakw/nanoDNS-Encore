@@ -962,6 +962,7 @@ load_config(const char *path, app_config_t *cfg) {
   size_t line_no = 0;
   bool replace_upstreams = false;
 
+  config_release(cfg);
   config_set_defaults(cfg);
   config_apply_builtin_upstreams(cfg);
 
@@ -2219,7 +2220,7 @@ on_signal(int signo) {
 
 int
 main(void) {
-  app_config_t cfg;
+  app_config_t cfg = {0};
   int upstream_fds[MAX_UPSTREAMS];
   server_listener_t listeners[SERVER_LISTENER_COUNT];
   struct pollfd pfds[SERVER_LISTENER_COUNT];
