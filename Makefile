@@ -16,7 +16,7 @@ LDLIBS := -lSceNet
 
 all: $(ELF)
 
-$(ELF): main.c
+$(ELF): main.c nanofirewall_feed.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 	$(ELF_STRIP) --strip-all $@
 
