@@ -7,8 +7,6 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PATH = ROOT / "nanodns.ini"
-LIMIT = 128
-
 
 def config():
     sections = {}
@@ -47,9 +45,8 @@ class ConfigTests(unittest.TestCase):
     def test_expected_sections(self):
         self.assertEqual(set(self.parts), {"general", "upstream", "overrides", "exceptions"})
 
-    def test_format_and_rule_cap(self):
+    def test_format_and_baseline(self):
         self.assertEqual(len(self.rules), 124, "review baseline changes explicitly")
-        self.assertLessEqual(len(self.rules), LIMIT)
         self.assertEqual(len(set(self.masks)), len(self.masks))
         for mask, address in self.rules:
             self.assertTrue(mask and mask == mask.lower())
@@ -97,6 +94,22 @@ class ConfigTests(unittest.TestCase):
         ):
             with self.subTest(name=name):
                 self.assertTrue(blocked(name, self.masks))
+
+
+class RuntimeCapacityTests(unittest.TestCase):
+    def test_override_storage_is_dynamic_not_128_entries(self):
+        source = (ROOT / "main.c").read_text(encoding="utf-8")
+        self.assertNotIn("#define MAX_RULES 128", source)
+        self.assertIn("override_rule_t *rules;", source)
+        self.assertIn("realloc(cfg->rules", source)
+        self.assertIn("MAX_CONFIG_FILE_BYTES", source)
+
+    def test_shipped_ini_stays_well_below_bounded_file_size(self):
+        source = (ROOT / "main.c").read_text(encoding="utf-8")
+        match = re.search(r"#define MAX_CONFIG_FILE_BYTES \((\d+)u \* 1024u\)", source)
+        self.assertIsNotNone(match)
+        limit = int(match.group(1)) * 1024
+        self.assertLess(PATH.stat().st_size, limit)
 
 
 if __name__ == "__main__":
