@@ -5,7 +5,7 @@
 
 ## Unreleased — source after 0.4-13.60.3
 
-- Replace the fixed `MAX_RULES=128` override array and `MAX_EXCEPTIONS=128` exception array with bounded dynamic heap storage. The configuration file is capped at 64 KiB instead of silently truncating at 128 overrides; the 124 mandatory masks remain a separate compiled policy and keep precedence over user exceptions/overrides.
+- Replace the fixed `MAX_RULES=128` override array and `MAX_EXCEPTIONS=128` exception array with bounded dynamic heap storage. The configuration file is capped at 4 MiB instead of silently truncating at 128 overrides; the 124 mandatory masks remain a separate compiled policy and keep precedence over user exceptions/overrides.
 - This is source-only until a new current-generation console binary is built and hardware-qualified; the published 0.4-13.60.3 ELF retains the historical 128-entry override table.
 ## 0.4-13.60.3 — DNS migration (2026-11-24)
 

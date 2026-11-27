@@ -28,8 +28,8 @@ class DynamicConfigParser(unittest.TestCase):
             )
 
             ini = root / "large.ini"
-            rules = [f"rule-{i:03d}.example.test=0.0.0.0" for i in range(300)]
-            exceptions = [f"except-{i:03d}.example.test" for i in range(200)]
+            rules = [f"rule-{i:03d}.example.test=0.0.0.0" for i in range(4096)]
+            exceptions = [f"except-{i:03d}.example.test" for i in range(4096)]
             body = (
                 "[general]\n"
                 "bind=127.0.0.1\n"
@@ -39,7 +39,7 @@ class DynamicConfigParser(unittest.TestCase):
                 "[overrides]\n" + "\n".join(rules) + "\n"
                 "[exceptions]\n" + "\n".join(exceptions) + "\n"
             )
-            self.assertLess(len(body.encode()), 64 * 1024)
+            self.assertLess(len(body.encode()), 4096 * 1024)
             ini.write_text(body, encoding="utf-8")
 
             harness = root / "parser.c"
@@ -54,16 +54,23 @@ class DynamicConfigParser(unittest.TestCase):
                 #undef main
 
                 int main(int argc, char **argv) {{
-                    if (argc != 2) return 90;
+                    if (argc != 4) return 90;
+                    size_t expected_rules = strtoul(argv[2], NULL, 10);
+                    size_t expected_exceptions = strtoul(argv[3], NULL, 10);
                     app_config_t cfg = {{0}};
                     int rc = load_config(argv[1], &cfg);
+                    if (expected_rules > MAX_RULES || expected_exceptions > MAX_EXCEPTIONS) {{
+                        int saved = errno;
+                        config_release(&cfg);
+                        return rc != 0 && saved == E2BIG ? 0 : 19;
+                    }}
                     if (rc != 0) return 10;
-                    if (cfg.rule_count != 300) return 11;
-                    if (cfg.exception_count != 200) return 12;
+                    if (cfg.rule_count != expected_rules) return 11;
+                    if (cfg.exception_count != expected_exceptions) return 12;
                     if (cfg.rule_capacity < cfg.rule_count) return 13;
                     if (cfg.exception_capacity < cfg.exception_count) return 14;
-                    if (strcmp(cfg.rules[299].mask, "rule-299.example.test")) return 15;
-                    if (strcmp(cfg.exceptions[199].mask, "except-199.example.test")) return 16;
+                    if (expected_rules == MAX_RULES && strcmp(cfg.rules[MAX_RULES-1].mask, "rule-4095.example.test")) return 15;
+                    if (expected_exceptions == MAX_EXCEPTIONS && strcmp(cfg.exceptions[MAX_EXCEPTIONS-1].mask, "except-4095.example.test")) return 16;
                     config_release(&cfg);
                     if (cfg.rules || cfg.exceptions) return 17;
                     return 0;
@@ -84,12 +91,23 @@ class DynamicConfigParser(unittest.TestCase):
             )
             self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
             run = subprocess.run(
-                [str(exe), str(ini)],
+                [str(exe), str(ini), "4096", "4096"],
                 text=True, capture_output=True,
                 env={"ASAN_OPTIONS": "detect_leaks=1",
                      "UBSAN_OPTIONS": "halt_on_error=1"},
             )
             self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+
+            profile = ROOT / "nanodns4096.ini"
+            actual_count = sum(1 for line in profile.read_text(encoding="utf-8").splitlines() if line.endswith("=0.0.0.0"))
+            for path, nr, ne in [(profile, actual_count, 0)]:
+                run = subprocess.run([str(exe), str(path), str(nr), str(ne)], text=True, capture_output=True)
+                self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+            # Reject both count overflows, not silently truncate to 4096.
+            for suffix, nr, ne in [(body.replace("[exceptions]", "overflow.example.test=0.0.0.0\n[exceptions]"), 4097, 4096), (body + "overflow.example.test\n", 4096, 4097)]:
+                ini.write_text(suffix, encoding="utf-8")
+                run = subprocess.run([str(exe), str(ini), str(nr), str(ne)], text=True, capture_output=True)
+                self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
 if __name__ == "__main__":
     unittest.main()

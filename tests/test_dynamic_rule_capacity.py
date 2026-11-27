@@ -23,7 +23,7 @@ class DynamicRuleCapacity(unittest.TestCase):
         defines = "\n".join(
             extract(rf"^#define {name} [^\\n]*$", name)
             for name in (
-                "MAX_UPSTREAMS", "INITIAL_RULE_CAPACITY",
+                "MAX_UPSTREAMS", "MAX_RULES", "MAX_EXCEPTIONS", "INITIAL_RULE_CAPACITY",
                 "INITIAL_EXCEPTION_CAPACITY",
                 "MAX_CONFIG_WARNINGS", "MAX_CONFIG_WARNING_LEN",
                 "MAX_DOMAIN_LEN", "MAX_LOG_PATH",
@@ -55,21 +55,25 @@ int main(void) {
     app_config_t cfg;
     memset(&cfg, 0, sizeof(cfg));
     char mask[64];
-    for (int i = 0; i < 512; ++i) {
+    for (int i = 0; i < 4096; ++i) {
         snprintf(mask, sizeof(mask), "rule-%03d.example.test", i);
         if (config_add_rule(&cfg, mask, "0.0.0.0") != 0) return 10;
     }
-    if (cfg.rule_count != 512) return 11;
+    if (cfg.rule_count != 4096) return 11;
+    if (config_add_rule(&cfg, "overflow.example.test", "0.0.0.0") != -5) return 25;
+    if (cfg.rule_count != 4096) return 26;
     if (cfg.rule_capacity < cfg.rule_count) return 12;
     if (strcmp(cfg.rules[0].mask, "rule-000.example.test") != 0) return 13;
-    if (strcmp(cfg.rules[511].mask, "rule-511.example.test") != 0) return 14;
-    for (int i = 0; i < 512; ++i) {
+    if (strcmp(cfg.rules[4095].mask, "rule-4095.example.test") != 0) return 14;
+    for (int i = 0; i < 4096; ++i) {
         snprintf(mask, sizeof(mask), "exception-%03d.example.test", i);
         if (config_add_exception(&cfg, mask) != 0) return 20;
     }
-    if (cfg.exception_count != 512) return 21;
+    if (cfg.exception_count != 4096) return 21;
+    if (config_add_exception(&cfg, "overflow.example.test") != -5) return 27;
+    if (cfg.exception_count != 4096) return 28;
     if (cfg.exception_capacity < cfg.exception_count) return 22;
-    if (strcmp(cfg.exceptions[511].mask, "exception-511.example.test") != 0) return 23;
+    if (strcmp(cfg.exceptions[4095].mask, "exception-4095.example.test") != 0) return 23;
     config_release(&cfg);
     if (cfg.rules != NULL || cfg.rule_count != 0 || cfg.rule_capacity != 0) return 15;
     if (cfg.exceptions != NULL || cfg.exception_count != 0 || cfg.exception_capacity != 0) return 24;

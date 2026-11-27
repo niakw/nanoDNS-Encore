@@ -20,7 +20,7 @@
 
 ## Code source actuel après 0.4-13.60.3 — capacité des règles
 
-Les anciens tableaux fixes de **128 overrides et 128 exceptions ont été supprimés sur `main`**. Le code source actuel utilise un stockage dynamique borné pour ces deux listes, avec une limite globale de 64 Kio pour le fichier de configuration ; les 124 motifs obligatoires compilés restent séparés et prioritaires. La CI compile et teste **512 overrides + 512 exceptions** avec les fonctions de stockage de production sous sanitizers. **L'ELF 0.4-13.60.3 publié conserve encore les anciennes tables de 128 entrées** jusqu'à reconstruction et qualification matérielle d'un nouveau binaire.
+Les anciens tableaux fixes de **128 overrides et 128 exceptions ont été supprimés sur `main`**. Le code source actuel utilise un stockage dynamique borné pour ces deux listes, avec une limite globale de 4 Mio pour le fichier de configuration ; les 124 motifs obligatoires compilés restent séparés et prioritaires. La CI vise **4 096 overrides + 4 096 exceptions** avec les fonctions de stockage de production sous sanitizers. **L'ELF 0.4-13.60.3 publié conserve encore les anciennes tables de 128 entrées** jusqu'à reconstruction et qualification matérielle d'un nouveau binaire.
 
 ## Ancienne Release 0.4-13.60.2 — preuves matérielles
 
@@ -109,3 +109,7 @@ Code original : [Drakmor](https://github.com/drakmor/nanoDNS). Règles : [niakw 
 ---
 
 **Des protections mesurables. Des limites documentées.**
+
+### Profil étendu optionnel (source uniquement)
+
+[`nanodns4096.ini`](nanodns4096.ini) : 1719 règles, 36 règles exactes redondantes supprimées hors des 124 règles obligatoires. Limites source : 4 096 overrides et 4 096 exceptions, fichier INI de 4 Mio maximum. Inventaire indicatif, non exhaustivement vérifié par trafic réel. Ne pas installer avec l'ELF publié 0.4-13.60.3. Le profil standard reste inchangé.

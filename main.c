@@ -43,7 +43,9 @@
 #define DNS_PORT 53
 #define MAX_DNS_PACKET 4096
 #define MAX_UPSTREAMS 8
-#define MAX_CONFIG_FILE_BYTES (64u * 1024u)
+#define MAX_CONFIG_FILE_BYTES (4096u * 1024u)
+#define MAX_RULES 4096u
+#define MAX_EXCEPTIONS 4096u
 #define INITIAL_RULE_CAPACITY 16u
 #define INITIAL_EXCEPTION_CAPACITY 8u
 #define MAX_CONFIG_WARNINGS 128
@@ -805,6 +807,10 @@ static int
 config_add_rule(app_config_t *cfg, const char *mask, const char *ip) {
   override_rule_t *rule;
 
+  if(cfg->rule_count >= MAX_RULES) {
+    return -5;
+  }
+
   if(strlen(mask) >= sizeof(((override_rule_t *)0)->mask)) {
     return -3;
   }
@@ -840,6 +846,10 @@ config_add_rule(app_config_t *cfg, const char *mask, const char *ip) {
 static int
 config_add_exception(app_config_t *cfg, const char *mask) {
   exception_rule_t *rule;
+
+  if(cfg->exception_count >= MAX_EXCEPTIONS) {
+    return -5;
+  }
 
   if(strlen(mask) >= sizeof(((exception_rule_t *)0)->mask)) {
     return -3;
@@ -1065,9 +1075,9 @@ load_config(const char *path, app_config_t *cfg) {
           config_add_warning(cfg,
                              "[nanodns] warning: %s:%zu exception mask too long, ignoring '%s'\n",
                              path, line_no, key);
-        } else if(rc == -4) {
+        } else if(rc == -4 || rc == -5) {
           (void)fclose(fp);
-          errno = ENOMEM;
+          errno = rc == -5 ? E2BIG : ENOMEM;
           return -1;
         }
       }
@@ -1170,9 +1180,9 @@ load_config(const char *path, app_config_t *cfg) {
         config_add_warning(cfg,
                            "[nanodns] warning: %s:%zu override mask too long, ignoring '%s'\n",
                            path, line_no, key);
-      } else if(rc == -4) {
+      } else if(rc == -4 || rc == -5) {
         (void)fclose(fp);
-        errno = ENOMEM;
+        errno = rc == -5 ? E2BIG : ENOMEM;
         return -1;
       }
     }

@@ -20,7 +20,7 @@
 
 ## Current source after 0.4-13.60.3
 
-`main` no longer has the historical 128-entry override/exception tables. Runtime overrides and exceptions now use bounded dynamic storage, with the whole INI capped at 64 KiB; host tests exercise 512 overrides plus 512 exceptions under ASan/UBSan. The **published 0.4-13.60.3 ELF still has the old 128-entry tables** until a new binary is built and hardware-qualified. The 124 mandatory masks remain compiled separately and keep priority.
+`main` no longer has the historical 128-entry override/exception tables. Runtime overrides and exceptions now use bounded dynamic storage, with the whole INI capped at 4 MiB; host tests target 4,096 overrides plus 4,096 exceptions under ASan/UBSan. The **published 0.4-13.60.3 ELF still has the old 128-entry tables** until a new binary is built and hardware-qualified. The 124 mandatory masks remain compiled separately and keep priority.
 
 ## Release 0.4-13.60.3 — DNS migration (24 November 2026)
 
@@ -28,7 +28,7 @@
 
 ## Current source after 0.4-13.60.3 — policy capacity refactor
 
-The historical fixed **128-entry override table and 128-entry exception table are no longer present on `main`**. Current source uses bounded dynamic storage for both user policy lists, with a 64 KiB configuration-file limit; the 124 mandatory compiled masks remain separate and keep priority. CI compiles and exercises **512 overrides + 512 exceptions** with the production storage functions under sanitizers. **The published 0.4-13.60.3 ELF still contains the historical 128-entry tables** until a new binary is built and hardware-qualified.
+The historical fixed **128-entry override table and 128-entry exception table are no longer present on `main`**. Current source uses bounded dynamic storage for both user policy lists, with a 4 MiB configuration-file limit; the 124 mandatory compiled masks remain separate and keep priority. CI targets **4,096 overrides + 4,096 exceptions** with the production storage functions under sanitizers. **The published 0.4-13.60.3 ELF still contains the historical 128-entry tables** until a new binary is built and hardware-qualified.
 
 ## Historical Release 0.4-13.60.2 — hardware evidence
 
@@ -145,3 +145,7 @@ This is **not a firewall**. Direct IP connections, alternative/encrypted DNS, ca
 ---
 
 **Secure what DNS can protect. Document what it cannot.**
+
+### Optional extended profile (source only)
+
+[`nanodns4096.ini`](nanodns4096.ini): 1719 rules; 36 redundant exact rules removed outside the 124 mandatory rules. Source limits: 4,096 overrides and 4,096 exceptions, 4 MiB INI. Best-effort inventory, not exhaustively verified against live traffic. Do not install with the published 0.4-13.60.3 ELF. The standard profile is unchanged.
