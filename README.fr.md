@@ -18,6 +18,10 @@
 
 **0.4-13.60.3 utilise Control D sans filtrage en priorité, AdGuard DNS sans filtrage en secours. Pas encore testé sur console.** Quad9 a cessé de servir les utilisateurs français le 24 novembre 2026. Ordre des DNS : `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Chaque serveur dispose de 1 500 ms de délai de réponse ; SERVFAIL/REFUSED déclenchent également le secours suivant. Les 124 règles obligatoires restent intactes. Aucun filtrage antimalware ou publicitaire supplémentaire par ces profils. Remplacer les deux fichiers ELF et INI ; les deux DNS de la console restent `127.0.0.1`.
 
+## Code source actuel après 0.4-13.60.3 — capacité des règles
+
+Les anciens tableaux fixes de **128 overrides et 128 exceptions ont été supprimés sur `main`**. Le code source actuel utilise un stockage dynamique borné pour ces deux listes, avec une limite globale de 64 Kio pour le fichier de configuration ; les 124 motifs obligatoires compilés restent séparés et prioritaires. La CI compile et teste **512 overrides + 512 exceptions** avec les fonctions de stockage de production sous sanitizers. **L'ELF 0.4-13.60.3 publié conserve encore les anciennes tables de 128 entrées** jusqu'à reconstruction et qualification matérielle d'un nouveau binaire.
+
 ## Ancienne Release 0.4-13.60.2 — preuves matérielles
 
 **Anciens ELF et ZIP : `0.4-13.60.2`, TEST UTILISATEUR RÉUSSI sur firmware 13.60 pour le démarrage, le chargement des paramètres et le filtrage A.** Le journal confirme 5/5 requêtes A bloquées avec `0.0.0.0`, 124 règles, aucune exception et les écoutes IPv4/IPv6. **Le testeur confirme également une extinction et un rallumage réussis avec 0.4-13.60.2**, sans réapparition de l'anomalie initiale. Ce résultat est rapporté par l'utilisateur et non attesté par un marqueur terminal des journaux. Veille/reprise, DNS autorisé, AAAA, répétitions et endurance restent à vérifier. L'ancienne **0.4-13.60.1** ([Release précédente](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.1-beta.1)) avait également réussi un essai d'extinction/rallumage. Les autres firmwares restent non validés.
