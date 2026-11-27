@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 C = (ROOT / "main.c").read_text(encoding="utf-8")
 
 def extract(pattern, name):
-    m = re.search(pattern, C, re.S)
+    m = re.search(pattern, C, re.S | re.M)
     if not m:
         raise AssertionError(f"cannot extract {name}")
     return m.group(0)
