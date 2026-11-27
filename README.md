@@ -26,6 +26,10 @@
 
 **0.4-13.60.3 uses Control D (unfiltered) first and AdGuard DNS (non-filtering) as fallback. NOT YET USER-TESTED on hardware.** Quad9 ceased serving French users on 24 November 2026. New upstream order: `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Each resolver gets its own 1500 ms response window; SERVFAIL/REFUSED also advance to the next resolver. The original 124 mandatory masks remain unchanged. No additional malware or ad filtering is provided by these upstream profiles. Replace both ELF and INI; keep both console DNS fields at `127.0.0.1`.
 
+## Current source after 0.4-13.60.3 — policy capacity refactor
+
+The historical fixed **128-entry override table and 128-entry exception table are no longer present on `main`**. Current source uses bounded dynamic storage for both user policy lists, with a 64 KiB configuration-file limit; the 124 mandatory compiled masks remain separate and keep priority. CI compiles and exercises **512 overrides + 512 exceptions** with the production storage functions under sanitizers. **The published 0.4-13.60.3 ELF still contains the historical 128-entry tables** until a new binary is built and hardware-qualified.
+
 ## Historical Release 0.4-13.60.2 — hardware evidence
 
 **Previous ELF/ZIP: `0.4-13.60.2`; USER-TESTED on firmware 13.60 for startup, configuration loading and blocked A queries.** The user's log confirms 5/5 observed A queries blocked with `0.0.0.0`, 124 rules, zero exceptions and both loopback listeners. **The tester also confirmed a successful normal shutdown and power-on with 0.4-13.60.2**, without recurrence of the original issue. This outcome is user-reported; the DNS log itself has no terminal shutdown marker. Rest/resume, permitted Quad9 lookups, AAAA, repeated cycles and endurance remain unverified. The earlier **0.4-13.60.1** release ([previous release](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.1-beta.1)) separately passed a shutdown/power-on trial. No other firmware is user-validated.
