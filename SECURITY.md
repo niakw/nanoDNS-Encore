@@ -33,6 +33,10 @@ If you need *no unfiltered outbound traffic*, enforce WAN-deny rules on your **r
 - DNS logs can contain domain names, network addresses and timestamps. Review and redact before sharing.
 - A successful SDK build is not proof of safe shutdown on console 13.60. Observe [test plan](docs/TEST_PLAN.md).
 
+## Runtime configuration hardening on current source
+
+The current `main` source no longer stores overrides in a fixed 128-entry stack array. Override entries are allocated on the heap as the configuration is parsed; the INI itself is bounded to 64 KiB to keep memory use and parsing work finite. The 124 mandatory masks remain separately compiled into the ELF and therefore do not depend on user override capacity. The published 0.4-13.60.3 binary predates this refactor and still has the historical 128-entry override table. This source change requires a new build and hardware qualification before it is presented as a release behavior.
+
 ## Default configuration file protection (source after the 13.60 release)
 
 The repository source now uses an exclusive `open()` with `O_CREAT | O_EXCL | O_NOFOLLOW` and mode `0600` to create the default INI only when absent. Existing configurations are not truncated. Reading the INI also uses `O_NOFOLLOW` and verifies a regular file; unreadable or unsafe files lead to compiled mandatory fallback rules. This **source hardening is not included in the currently published user-tested release ELF** until a new binary is published and checked. It does not protect against privileged changes to the whole runtime directory.
