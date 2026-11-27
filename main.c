@@ -20,6 +20,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "dns_mask.h"
+#include "nanofirewall_feed.h"
 
 #if defined(PLATFORM_PS4)
 #include <ps4/kernel.h>
@@ -2123,6 +2124,16 @@ handle_dns_request(const app_config_t *cfg, int server_fd, int *upstream_fds,
   {
     char via[INET_ADDRSTRLEN];
 
+    /*
+     * Best-effort nanoFirewall observation. Only queries that survived all
+     * local nanoDNS deny/override policy reach this point. Firewall-originated
+     * re-resolution is identified by its dedicated loopback source port and
+     * deliberately excluded to prevent a feedback loop.
+     */
+    if(!nanofirewall_feed_is_internal_client(client_addr, client_len)) {
+      (void)nanofirewall_feed_notify(question.qname);
+    }
+
     if(forward_query_to_upstream(cfg, request, request_len, &question,
                                  upstream_fds, response, sizeof(response),
                                  &response_len, via, sizeof(via)) == 0) {
@@ -2452,6 +2463,7 @@ main(void) {
   log_printf("[nanodns] shutdown: closing upstream sockets\n");
   close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
   log_printf("[nanodns] shutdown: releasing SceNet pool\n");
+  nanofirewall_feed_close();
   net_fini();
   log_printf("[nanodns] shutdown: complete\n");
   logger_fini();
