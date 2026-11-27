@@ -102,6 +102,9 @@ class RuntimeCapacityTests(unittest.TestCase):
         self.assertNotIn("#define MAX_RULES 128", source)
         self.assertIn("override_rule_t *rules;", source)
         self.assertIn("realloc(cfg->rules", source)
+        self.assertIn("exception_rule_t *exceptions;", source)
+        self.assertIn("realloc(cfg->exceptions", source)
+        self.assertNotIn("#define MAX_EXCEPTIONS 128", source)
         self.assertIn("MAX_CONFIG_FILE_BYTES", source)
 
     def test_shipped_ini_stays_well_below_bounded_file_size(self):
