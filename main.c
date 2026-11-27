@@ -43,8 +43,9 @@
 #define DNS_PORT 53
 #define MAX_DNS_PACKET 4096
 #define MAX_UPSTREAMS 8
-#define MAX_RULES 128
 #define MAX_EXCEPTIONS 128
+#define MAX_CONFIG_FILE_BYTES (64u * 1024u)
+#define INITIAL_RULE_CAPACITY 16u
 #define MAX_CONFIG_WARNINGS 128
 #define MAX_CONFIG_WARNING_LEN 256
 #define MAX_DOMAIN_LEN 256
@@ -93,8 +94,9 @@ typedef struct {
 typedef struct {
   upstream_t upstreams[MAX_UPSTREAMS];
   size_t upstream_count;
-  override_rule_t rules[MAX_RULES];
+  override_rule_t *rules;
   size_t rule_count;
+  size_t rule_capacity;
   exception_rule_t exceptions[MAX_EXCEPTIONS];
   size_t exception_count;
   int timeout_ms;
@@ -786,15 +788,36 @@ config_add_upstream(app_config_t *cfg, const char *ip) {
   return 0;
 }
 
+static void
+config_release(app_config_t *cfg) {
+  free(cfg->rules);
+  cfg->rules = NULL;
+  cfg->rule_count = 0;
+  cfg->rule_capacity = 0;
+}
+
 static int
 config_add_rule(app_config_t *cfg, const char *mask, const char *ip) {
   override_rule_t *rule;
 
-  if(strlen(mask) >= sizeof(cfg->rules[0].mask)) {
+  if(strlen(mask) >= sizeof(((override_rule_t *)0)->mask)) {
     return -3;
   }
-  if(cfg->rule_count >= MAX_RULES) {
-    return -1;
+
+  if(cfg->rule_count == cfg->rule_capacity) {
+    size_t next_capacity =
+        cfg->rule_capacity == 0 ? INITIAL_RULE_CAPACITY : cfg->rule_capacity * 2u;
+    if(next_capacity < cfg->rule_capacity ||
+       next_capacity > SIZE_MAX / sizeof(*cfg->rules)) {
+      return -4;
+    }
+    override_rule_t *next =
+        realloc(cfg->rules, next_capacity * sizeof(*cfg->rules));
+    if(next == NULL) {
+      return -4;
+    }
+    cfg->rules = next;
+    cfg->rule_capacity = next_capacity;
   }
 
   rule = &cfg->rules[cfg->rule_count];
@@ -935,6 +958,12 @@ load_config(const char *path, app_config_t *cfg) {
   if(!S_ISREG(config_stat.st_mode)) {
     (void)close(fd);
     errno = EINVAL;
+    return -1;
+  }
+  if(config_stat.st_size < 0 ||
+     (uintmax_t)config_stat.st_size > MAX_CONFIG_FILE_BYTES) {
+    (void)close(fd);
+    errno = EFBIG;
     return -1;
   }
   fp = fdopen(fd, "r");
@@ -1110,10 +1139,14 @@ load_config(const char *path, app_config_t *cfg) {
         config_add_warning(cfg,
                            "[nanodns] warning: %s:%zu invalid override IPv4 '%s' for mask '%s', ignoring\n",
                            path, line_no, value, key);
-      } else if(rc != 0) {
+      } else if(rc == -3) {
         config_add_warning(cfg,
-                           "[nanodns] warning: %s:%zu too many override rules, ignoring '%s=%s'\n",
-                           path, line_no, key, value);
+                           "[nanodns] warning: %s:%zu override mask too long, ignoring '%s'\n",
+                           path, line_no, key);
+      } else if(rc == -4) {
+        (void)fclose(fp);
+        errno = ENOMEM;
+        return -1;
       }
     }
   }
@@ -2198,6 +2231,7 @@ main(void) {
   }
 
   if(load_config(CONFIG_PATH, &cfg) != 0) {
+    config_release(&cfg);
     config_set_defaults(&cfg);
     config_apply_builtin_upstreams(&cfg);
     (void)config_apply_builtin_overrides(&cfg);
@@ -2267,12 +2301,14 @@ main(void) {
   if(elevate_privileges() != 0) {
     close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
     logger_fini();
+    config_release(&cfg);
     return EXIT_FAILURE;
   }
 
   if(net_init() != 0) {
     close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
     logger_fini();
+    config_release(&cfg);
     return 1;
   }
 
@@ -2291,6 +2327,7 @@ main(void) {
     close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
     net_fini();
     logger_fini();
+    config_release(&cfg);
     return EXIT_FAILURE;
   }
 
@@ -2381,5 +2418,6 @@ main(void) {
   net_fini();
   log_printf("[nanodns] shutdown: complete\n");
   logger_fini();
+  config_release(&cfg);
   return 0;
 }
