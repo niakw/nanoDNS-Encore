@@ -14,6 +14,29 @@
 - Bounded listener shutdown waits, nonblocking UDP sockets and reduced startup log volume without changing DNS policy.
 - Existing file creation/read hardening remains: `O_CREAT | O_EXCL | O_NOFOLLOW` for safe creation, no-symlink descriptor reads and compiled-policy fallback.
 
+## Boot and resident lifecycle hardening
+
+0.4-13.60.4 also contains a substantial startup/shutdown hardening pass that is independent from the 1719-rule expansion:
+
+- **Single-resident admission before side effects:** nanoDNS acquires a kernel-owned, nonblocking record lock at `/data/nanodns/resident.lock` **before** config creation/selection, log rotation or SceNet initialization. A duplicate launch is refused instead of allowing two residents to partially initialize.
+- **No PID guessing or forced replacement:** the lock is released automatically by the kernel when the process exits; no stale PID-file logic, process-structure guessing or `SIGKILL` replacement is used.
+- **Earlier and safer cancellation:** `SIGINT`/`SIGTERM` handlers are installed with `sigaction()` before resident admission. Startup rechecks the stop condition before privilege/network initialization, listener creation and startup notification.
+- **Nonblocking DNS sockets:** local IPv4/IPv6 listeners and upstream UDP sockets are nonblocking. Upstream reply waits are split into at most **100 ms** polling slices so shutdown is observed promptly instead of waiting for a full resolver timeout.
+- **Bounded listener shutdown:** listener waits are bounded and stop-aware, reducing the risk of a resident blocking console shutdown while waiting on UDP activity.
+- **Distinct resident identity:** the PS5 resident thread requests the label `nanodns-encore` and logs the label syscall result and PID, while the installation path and payload filename remain unchanged for Payload Manager compatibility.
+- **Reduced synchronous boot logging:** normal startup records the selected profile and rule count instead of synchronously dumping the full rule inventory.
+- **Strict profile selection:** `nanodns4096.ini` is preferred; legacy `nanodns.ini` is consulted only when the preferred path is absent. The two profiles are never merged or double-managed.
+- **Fail-closed deny path:** once a mandatory override matches, the request can never fall through to an upstream resolver, even if construction of the local blocked response fails.
+- **DNS wire hardening:** malformed/ambiguous names are rejected and protected alias checks cover Answer, Authority and Additional response sections.
+
+These changes reduce risky work during boot and improve deterministic cleanup, but they are not a claim of a firmware-level power-management fix. Hardware shutdown/controller-wake/rest behavior remains version-specific and must be validated separately.
+
+## Additional 0.4-13.60.3 hardware field report
+
+Community issue **#4** provides unusually complete firmware 13.60 evidence for the previous 0.4-13.60.3 release: cold start after full power-off, controller power-on, single-instance startup, A and AAAA protected-name blocking, permitted Control D resolution, and rest/resume all passed. The tester recorded **273 responses, all NOERROR**, with no timeout or SERVFAIL. After resume, one stale-upstream drain triggered a reconnect and the same query then resolved immediately, with later queries normal.
+
+The report does **not** test AdGuard failover or forced timeout/SERVFAIL/REFUSED behavior. It is kept as a public hardware-reference report rather than treated as an unresolved defect.
+
 ## Firmware 13.60 user-test evidence — 28 November 2026
 
 **0.4-13.60.4 DNS PATH: USER-TESTED.** The supplied runtime trace identifies `NanoDNS v0.4-13.60.4-dev`, the development build used to qualify this release behavior, and shows:
@@ -56,6 +79,31 @@ Original work and GPL-3.0: [Drakmor/nanoDNS](https://github.com/drakmor/nanoDNS)
 ---
 
 ## Français — notes de version
+
+### Renforcement du boot et du cycle de vie résident
+
+0.4-13.60.4 ne se limite pas au passage à 1719 règles. Le démarrage et l'arrêt du résident ont aussi été fortement durcis :
+
+- **Admission d'une seule instance avant tout effet de bord :** verrou noyau non bloquant `/data/nanodns/resident.lock` acquis avant création/sélection de l'INI, rotation des logs ou initialisation SceNet. Un double lancement est refusé avant initialisation partielle.
+- **Aucun PID supposé ni remplacement forcé :** le noyau libère le verrou à la fin du processus ; pas de fichier PID périmé, de scan de structures internes ni de `SIGKILL`.
+- **Arrêt pris en compte plus tôt :** gestion `SIGINT`/`SIGTERM` via `sigaction()` avant l'admission, avec contrôles d'annulation avant les étapes privilèges/réseau/listeners/notification.
+- **Sockets DNS non bloquantes :** listeners IPv4/IPv6 et sockets UDP amont non bloquants ; attente amont découpée en tranches de **100 ms maximum** pour réagir rapidement à l'arrêt.
+- **Attentes listeners bornées** afin de réduire le risque de bloquer l'extinction de la console sur une attente UDP.
+- **Identité résidente distincte :** nom de thread `nanodns-encore`, retour syscall et PID journalisés, tout en conservant le chemin/fichier attendu par Payload Manager.
+- **Boot moins verbeux :** journalisation du profil choisi et du nombre de règles, sans dump synchrone de tout l'inventaire.
+- **Sélection stricte du profil :** `nanodns4096.ini` prioritaire, ancien `nanodns.ini` uniquement s'il est absent ; aucun mélange ni double gestion.
+- **Blocage fail-closed :** une requête reconnue comme interdite ne peut jamais repartir vers un DNS amont, même si la construction de la réponse locale échoue.
+- **Durcissement du parsing DNS :** refus des noms ambigus/mal formés et contrôle des alias protégés dans Answer, Authority et Additional.
+
+Ces changements réduisent le travail risqué au boot et rendent le nettoyage plus déterministe. Ils ne constituent pas pour autant une prétention de correctif système d'alimentation ; extinction, réveil manette et veille/reprise restent à qualifier par version.
+
+### Retour matériel communautaire 0.4-13.60.3
+
+L'issue **#4** apporte une preuve terrain particulièrement complète sur firmware 13.60 pour la version précédente : démarrage à froid, allumage par la manette, instance unique, blocage A/AAAA, résolutions autorisées via Control D et veille/reprise réussis. Le testeur rapporte **273 réponses, toutes NOERROR**, sans timeout ni SERVFAIL. Après reprise, un drain amont périmé provoque une reconnexion puis la requête aboutit immédiatement ; la suite reste normale.
+
+Le failover AdGuard et les cas forcés timeout/SERVFAIL/REFUSED ne sont pas testés. L'issue peut donc rester ouverte comme **rapport matériel de référence**, pas comme anomalie non résolue.
+
+
 
 **Release GitHub standard 0.4-13.60.4 · firmware 13.60 · 28 novembre 2026**
 

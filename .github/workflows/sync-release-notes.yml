@@ -2,12 +2,17 @@ name: Sync release 13.60.4 notes without rebuilding binaries
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - release/RELEASE_NOTES.md
+      - .github/workflows/sync-release-notes.yml
 
 permissions:
   contents: read
 
 concurrency:
-  group: nanodns-13-60-3-notes
+  group: nanodns-13-60-4-notes
   cancel-in-progress: false
 
 jobs:
