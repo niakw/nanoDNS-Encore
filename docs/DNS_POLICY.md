@@ -34,3 +34,7 @@ A hand-edited INI might add extra rules, which remain honored for otherwise unpr
 ## Limits and false positives
 
 Full service coverage is not provable from 124 known masks. This is UDP DNS only; TCP DNS, encrypted DNS, other resolvers, cached addresses, direct IPs, network traffic preceding exploit startup and in-firmware update installation are not intercepted. For zero leaks, add an external network deny policy. Broad patterns and the shared CDN operator alias can break legitimate traffic; investigate with redacted logs.
+
+## 2026-11-28: terminal deny decision
+
+Once an override is selected, its request never enters the upstream forwarding path, including if both the override reply and SERVFAIL construction fail. In that case the request is dropped. This is a local DNS policy guarantee only; UDP listeners do not cover TCP DNS, cached addresses, direct-IP traffic or other resolvers. The reported PS5 trace shows successful local blocked A replies for the PlayStation web domain; it does not prove absence of outbound packets. Hardware isolation remains unqualified.

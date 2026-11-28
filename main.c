@@ -2115,8 +2115,9 @@ handle_dns_request(const app_config_t *cfg, int server_fd, int *upstream_fds,
         return;
       }
 
-      log_printf("[nanodns] failed to build override response for %s\n",
+      log_printf("[nanodns] blocked response construction failed; dropping %s without upstream\n",
                  question.qname);
+      return;
     }
   }
 

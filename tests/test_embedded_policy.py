@@ -83,6 +83,14 @@ class PolicyIntegrityTests(unittest.TestCase):
         self.assertNotIn("terminate_existing_instances(", C)
         self.assertNotIn("SO_REUSEADDR", C)
 
+    def test_blocked_query_never_falls_through_to_upstream(self):
+        start = C.index("if(rule != NULL) {", C.index("handle_dns_request("))
+        end = C.index("forward_query_to_upstream(cfg, request", start)
+        block = C[start:end]
+        self.assertRegex(block, r'dropping %s without upstream\\n",\s*question.qname\);\s*return;\s*\}')
+        self.assertIn("build_nodata_response", block)
+        self.assertIn("override-servfail", block)
+
     def test_ordered_four_upstream_defaults(self):
         def upstreams(ini):
             section = ""
