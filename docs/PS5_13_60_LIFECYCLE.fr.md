@@ -4,7 +4,7 @@
 
 ## Versions et validation
 
-**0.4-13.60.2 : TEST UTILISATEUR RÉUSSI sur firmware 13.60 pour le démarrage et 5/5 requêtes A bloquées localement.** L'utilisateur a ensuite confirmé une extinction et un rallumage réussis avec ce nouvel ELF, sans retour de l'anomalie initiale, mais sans ligne de fermeture système dans le log. Veille/reprise, réveil spécifique à la manette et cycles répétés restent à valider ; **0.4-13.60.1** possède aussi un essai d'extinction positif distinct. Aucun autre firmware n'est validé par l'utilisateur.
+**0.4-13.60.4 : TEST UTILISATEUR RÉUSSI sur firmware 13.60 pour le démarrage et le chemin DNS A observé.** La trace du 28 novembre montre 1719 règles / 0 exception, les deux écoutes loopback, 15/15 requêtes A protégées observées bloquées localement et 7/7 requêtes A autorisées observées résolues par le premier DNS amont. Aucun arrêt n'apparaît dans cette trace : extinction/veille/réveil .4 restent à vérifier. L'ancienne 0.4-13.60.2 dispose séparément d'un essai utilisateur positif d'extinction/rallumage.
 
 ## Vérification utilisateur sur firmware 13.60 (19 novembre 2026, 0.4-13.60.1)
 
@@ -20,7 +20,7 @@ nanoDNS 0.4 recherchait les processus à partir d'offsets internes au système p
 
 1. WebKit Autoloader lance Payload Manager (un seul mécanisme d'autoload).
 2. Payload Manager charge nanoDNS depuis le chemin inchangé de `nanodns.elf`. Le payload demande le nom de thread résident `nanodns-encore` et journalise le résultat de l'appel système et le PID. L'affichage par le gestionnaire et le champ de commande du processus restent à vérifier sur console.
-3. Le fichier `/data/nanodns/nanodns.ini` est lu. S'il est absent, un profil par défaut de 124 règles est créé. Un fichier existant n'est jamais écrasé.
+3. `/data/nanodns/nanodns4096.ini` est prioritaire ; l'ancien `/data/nanodns/nanodns.ini` n'est lu que si le premier est absent. Si les deux manquent, le profil prioritaire de 1719 règles est créé. Aucun mélange des deux fichiers.
 4. Initialisation de SceNet, puis écoute UDP IPv4 sur `127.0.0.1:53` et éventuellement IPv6 sur `::1:53`.
 5. Si l'écoute IPv4 échoue, la nouvelle instance quitte proprement au lieu de partager le port avec un ancien nanoDNS.
 
@@ -42,7 +42,7 @@ La reprise depuis le mode repos peut réutiliser des sockets et états réseau. 
 
 ## Critères de validation
 
-Build SDK console vert ; cohérence des 124 règles ; absence de fuite DNS pour les noms interdits testés ; résolution des noms autorisés ; instances uniques ; arrêt normal, veille/reprise, démarrage la manette et absence de réparation du stockage. Voir le [plan de tests](TEST_PLAN.fr.md).
+Build SDK console vert ; cohérence des 1719 règles ; absence de fuite DNS pour les noms interdits testés ; résolution des noms autorisés ; instances uniques ; arrêt normal, veille/reprise, démarrage la manette et absence de réparation du stockage. Voir le [plan de tests](TEST_PLAN.fr.md).
 
 ## 28 novembre 2026 : récidive du démarrage par manette
 

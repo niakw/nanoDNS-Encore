@@ -1,46 +1,31 @@
-# DNS policy and exact security semantics
-
+# DNS policy architecture — firmware 13.60
 
 **Language:** English (default) | [Français](DNS_POLICY.fr.md)
-## Provenance
 
-The installable [`nanodns.ini`](../nanodns.ini) is sourced from [niakw/nanodns-console-blocklist](https://github.com/niakw/nanodns-console-blocklist), its selective 124-rule v3 profile (updated 10 October 2026). The original resolver is [Drakmor/nanoDNS](https://github.com/drakmor/nanoDNS); its code remains GPL-3.0.
+## Release policy
 
-The fork contains three synchronized snapshots: `nanodns.ini`, `nanodns.ini.example` and the compiled list of `k_protected_masks`. The generated initial config in `main.c` includes the same rules. Tests fail if those masks or sections drift. **The policy is not downloaded automatically at boot.** Changes to the source policy require a reviewed code change and new CI run.
+0.4-13.60.4 ships [`nanodns4096.ini`](../nanodns4096.ini) and compiles the same **1719 mandatory masks** into the ELF. The set includes the historical 124-rule canonical core and a broader multi-platform publisher inventory. It is a best-effort DNS inventory, not proof of exhaustive service coverage.
 
-## Enforcement order
+Runtime policy storage is bounded to **4,096 overrides + 4,096 exceptions**, with a 4 MiB INI ceiling. Mandatory compiled masks are evaluated before user exceptions.
 
-1. Decode a single standard-class IN DNS question, checking query opcode and packet structure. Nonstandard requests do **not** pass through upstream unfiltered.
-2. Match against the **built-in mandatory masks**. If matched, answer A with `0.0.0.0`, AAAA and other types without resource records, without contacting upstream.
-3. Only for names **not matching** the mandatory masks, consult the user's optional `[exceptions]` and `[overrides]`.
-4. Forward remaining questions to configured IPv4 upstream DNS, and verify returned transaction ID, name, class, type and response flags.
-5. Reject upstream answers that name a protected host in answer, authority or additional records and supported alias targets (CNAME/DNAME/NS/PTR/MX/SRV/SVCB/HTTPS).
+## Selection and fallback
 
-**Malformed data never needs to be forwarded** to maintain compatibility. This improves DNS-layer enforcement without being a firewall. An unknown hostname or direct IP can still reach an unwanted service.
+The runtime selects `/data/nanodns/nanodns4096.ini` first. It uses legacy `/data/nanodns/nanodns.ini` only when the preferred file does not exist. The two files are **never merged, rewritten into one another or jointly managed**.
 
-## Original source profile
+If neither exists, the preferred profile is created from the compiled default. If the selected file exists but is invalid or unsafe, compiled mandatory defaults are used and the legacy file is not consulted.
 
-- **124 rules** / **0 exceptions**, with broad platform services / platform vendor / additional console networks patterns, additional console networks, publisher services, publisher services, publisher services, publisher services, publisher services, publisher services, publisher services and other publishers.
-- **Ordered upstreams:** Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted. Quad9 ceased serving users in France on 24 November 2026 ([announcement](https://quad9.net/news/blog/au-revoir-france/)). Each upstream has its own timeout; SERVFAIL and REFUSED trigger the next resolver.
-- Local listeners: `127.0.0.1:53` and `[::1]:53`.
-- The list deliberately leaves e.g. GitHub and YouTube resolvable if the console actually uses this resolver.
+## Query handling
 
-## Existing installations and compatibility
+1. Parse and validate the DNS question.
+2. Match the 1719 mandatory masks. Protected A questions receive `0.0.0.0`; protected AAAA/other supported types receive no matching address record.
+3. Apply additional selected-INI rules and exceptions only after mandatory policy.
+4. Forward permitted queries through the ordered Control D/AdGuard UDP upstreams.
+5. Validate response identity and reject protected aliases before relaying a reply.
 
-nanoDNS **does not overwrite** an existing file at `/data/nanodns/nanodns.ini`. You must back it up and deploy this repo's `nanodns.ini` to get the same 124-rule display and zero user exceptions. The mandatory compiled rules still prevent a legacy platform vendor `[exceptions]` entry from permitting a covered domain.
+Once a mandatory override is selected, that request never enters the upstream path. This is a local DNS-policy property, not a firewall guarantee.
 
-A hand-edited INI might add extra rules, which remain honored for otherwise unprotected names. An invalid line or missing file falls back to the built-in rules where applicable. There is **no remote hot update** of the policy and no dependence on live GitHub access.
+## Hardware evidence — 28 November 2026
 
-## Limits and false positives
+The .4 user trace shows the preferred profile selected, **1719 rules / 0 exceptions**, both loopback listeners, **15/15 observed protected A queries answered locally**, and **7/7 observed permitted A queries resolved through the first upstream**. No runtime error is visible in the supplied trace.
 
-Full service coverage is not provable from 124 known masks. This is UDP DNS only; TCP DNS, encrypted DNS, other resolvers, cached addresses, direct IPs, network traffic preceding exploit startup and in-firmware update installation are not intercepted. For zero leaks, add an external network deny policy. Broad patterns and the shared CDN operator alias can break legitimate traffic; investigate with redacted logs.
-
-## 2026-11-28: terminal deny decision
-
-Once an override is selected, its request never enters the upstream forwarding path, including if both the override reply and SERVFAIL construction fail. In that case the request is dropped. This is a local DNS policy guarantee only; UDP listeners do not cover TCP DNS, cached addresses, direct-IP traffic or other resolvers. The reported console trace shows successful local blocked A replies for the protected web domain; it does not prove absence of outbound packets. Hardware isolation remains unqualified.
-
-Development candidate 0.4-13.60.4 uses the 1719-rule extended profile as its compiled mandatory policy and generated default. Candidate archives install the extended INI under its own filename. Historical release files remain unchanged. Existing local configs are not overwritten automatically; compiled masks still apply. Hardware qualification is pending.
-
-Development candidates select `/data/nanodns/nanodns4096.ini` first, or `/data/nanodns/nanodns.ini` only when the preferred path does not exist. If both are absent, create the preferred file. Do not merge, rewrite or read both profiles. An invalid selected file uses explicitly logged compiled defaults, never the other file. Compiled mandatory masks remain enforced even when the legacy INI is selected; the old binary and legacy profile remain compatible independently.
-
-The wire parser refuses ambiguous labels containing embedded NUL or literal dots. Configuration opens are nonblocking before regular-file validation. These are source-level hardening measures, not hardware qualification.
+The trace does not establish AAAA behavior on hardware, later-upstream failover, system-wide absence of DNS bypass, shutdown/rest/wake or long-term stability. See [validation plan](TEST_PLAN.md) and [security boundary](../SECURITY.md).

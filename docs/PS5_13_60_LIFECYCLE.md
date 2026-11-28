@@ -4,7 +4,7 @@
 **Language:** English (default) | [Français](PS5_13_60_LIFECYCLE.fr.md)
 ## Release version boundary
 
-**0.4-13.60.2 USER-TESTED on firmware 13.60 for startup and local A DNS filtering (5/5 observed queries blocked).** The user subsequently confirmed successful shutdown/power-on with this new ELF, with no recurrence of the original problem. This observation is not accompanied by a shutdown log marker. Rest/resume, explicit controller wake and repeated cycles still need verification; **0.4-13.60.1** has its own earlier positive shutdown trial. All other firmware remain not user-validated.
+**0.4-13.60.4 USER-TESTED on firmware 13.60 for startup and the observed A-query DNS path.** The 28 November trace shows 1719 rules / 0 exceptions, both loopback listeners, 15/15 observed protected A queries locally blocked, and 7/7 observed permitted A queries resolved through the first upstream. The trace has no shutdown sequence, so .4 shutdown/rest/controller-wake remain unverified. Earlier 0.4-13.60.2 has a separate successful user-reported shutdown/power-on trial. All other firmware remain not user-validated.
 
 ## Firmware 13.60 user verification (19 November 2026, v0.4-13.60.1)
 
@@ -20,7 +20,7 @@ The original v0.4 source scanned OS process structures using hard-coded offsets 
 
 1. The autoloader starts Payload Manager (avoid running both distinct autoload mechanisms at once).
 2. Payload Manager starts one nanoDNS process from the unchanged `nanodns.elf` installation path. The payload requests the resident thread label `nanodns-encore` and logs the syscall result and PID. Display by the manager and the OS process-command field are not yet hardware-verified.
-3. The process loads `/data/nanodns/nanodns.ini`. If missing, it generates a copy of the bundled 124-rule default policy. Existing configs are not overwritten.
+3. The process prefers `/data/nanodns/nanodns4096.ini`; only if absent does it use legacy `/data/nanodns/nanodns.ini`. If both are absent it creates the preferred 1719-rule profile. The two files are never merged.
 4. The process creates the SceNet pool, then tries IPv4 UDP `127.0.0.1:53`, plus optional IPv6 `::1:53`.
 5. If IPv4 cannot bind, startup aborts and releases SceNet; a second launch must **not** steal a running listener.
 
@@ -28,7 +28,7 @@ Only after successful listener initialization do startup notifications occur.
 
 ## Runtime
 
-- Matching the mandatory 124 masks occurs before user exceptions.
+- Matching the mandatory 1719 masks occurs before user exceptions.
 - Blocked A answers: `0.0.0.0`. Other blocked question types: NODATA.
 - A non-IN, non-standard or multi-question packet is refused, never blindly forwarded.
 - Permitted queries use upstream UDP with bounded timeouts. Returned response question/name/type/class/ID must match, and protected aliases in the answer section are rejected.
@@ -45,7 +45,7 @@ Rest mode may suspend and later resume existing sockets. console 13.60 behavior 
 
 ## Required evidence before release
 
-A green console SDK build; 124-rule parity tests; no leakage in known blocked A, AAAA, ANY and unsupported multi-question requests; at least one authorized name resolving; stable single-instance/duplicate behavior; clean 13.60 power off, physical-button power on, the controller power on and rest/resume; no filesystem repair warning; consistent logs through shutdown. See [test plan](TEST_PLAN.md).
+A green console SDK build; 1719-rule parity tests; no leakage in known blocked A, AAAA, ANY and unsupported multi-question requests; at least one authorized name resolving; stable single-instance/duplicate behavior; clean 13.60 power off, physical-button power on, the controller power on and rest/resume; no filesystem repair warning; consistent logs through shutdown. See [test plan](TEST_PLAN.md).
 
 ## 2026-11-28: controller power-on recurrence
 
