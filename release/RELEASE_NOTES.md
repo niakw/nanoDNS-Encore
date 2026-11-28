@@ -23,7 +23,7 @@
 - **Earlier and safer cancellation:** `SIGINT`/`SIGTERM` handlers are installed with `sigaction()` before resident admission. Startup rechecks the stop condition before privilege/network initialization, listener creation and startup notification.
 - **Nonblocking DNS sockets:** local IPv4/IPv6 listeners and upstream UDP sockets are nonblocking. Upstream reply waits are split into at most **100 ms** polling slices so shutdown is observed promptly instead of waiting for a full resolver timeout.
 - **Bounded listener shutdown:** listener waits are bounded and stop-aware, reducing the risk of a resident blocking console shutdown while waiting on UDP activity.
-- **Distinct resident identity:** the PS5 resident thread requests the label `nanodns-encore` and logs the label syscall result and PID, while the installation path and payload filename remain unchanged for Payload Manager compatibility.
+- **Distinct resident identity:** the current-generation console resident thread requests the label `nanodns-encore` and logs the label syscall result and PID, while the installation path and payload filename remain unchanged for Payload Manager compatibility.
 - **Reduced synchronous boot logging:** normal startup records the selected profile and rule count instead of synchronously dumping the full rule inventory.
 - **Strict profile selection:** `nanodns4096.ini` is preferred; legacy `nanodns.ini` is consulted only when the preferred path is absent. The two profiles are never merged or double-managed.
 - **Fail-closed deny path:** once a mandatory override matches, the request can never fall through to an upstream resolver, even if construction of the local blocked response fails.
