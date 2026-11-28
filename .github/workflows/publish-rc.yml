@@ -30,11 +30,14 @@ jobs:
       - name: Assert release input
         shell: bash
         run: |
+          set -euo pipefail
           test -s release/RELEASE_NOTES.md
           test -s nanodns4096.ini
           test -f LICENSE
           grep -Fq '#define APP_VERSION "0.4-13.60.4"' main.c
-          test "$(grep -Ec '=0\.0\.0\.0
+          count="$(grep -Ec '=0[.]0[.]0[.]0$' nanodns4096.ini)"
+          test "$count" -eq 1719
+
   build-ps5:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -64,6 +67,7 @@ jobs:
           path: nanodns.elf
           if-no-files-found: error
           retention-days: 30
+
   build-ps4:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -93,6 +97,7 @@ jobs:
           path: nanodns-ps4.elf
           if-no-files-found: error
           retention-days: 30
+
   publish:
     needs: [verify, build-ps5, build-ps4]
     if: github.repository == 'niakw/nanoDNS-Encore' && github.ref == 'refs/heads/main'
@@ -117,9 +122,7 @@ jobs:
         with:
           name: release-ps4
           path: dist
-      - name: Package the two-file FTP ZIP and both checksum manifests
-        env:
-          BUNDLE: nanodns-13.60-v0.4-13.60.4-install.zip
+      - name: Package two-file FTP ZIP and checksum manifests
         shell: bash
         run: |
           set -euo pipefail
@@ -132,7 +135,12 @@ jobs:
           mkdir -p package/data/pldmgr/payloads/local/nanodns package/data/nanodns
           cp dist/nanodns.elf package/data/pldmgr/payloads/local/nanodns/nanodns.elf
           cp dist/nanodns4096.ini package/data/nanodns/nanodns4096.ini
-          (cd package && zip -q -X -D "../$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf data/nanodns/nanodns4096.ini)
+          (
+            cd package
+            zip -q -X -D "../$BUNDLE" \
+              data/pldmgr/payloads/local/nanodns/nanodns.elf \
+              data/nanodns/nanodns4096.ini
+          )
           unzip -t "$BUNDLE"
           test "$(unzip -Z -1 "$BUNDLE" | LC_ALL=C sort)" = "$(printf '%s\n' 'data/nanodns/nanodns4096.ini' 'data/pldmgr/payloads/local/nanodns/nanodns.elf' | LC_ALL=C sort)"
           cmp dist/nanodns.elf <(unzip -p "$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf)
@@ -148,129 +156,12 @@ jobs:
             exit 1
           fi
           gh release create "$TAG" \
-            dist/nanodns.elf dist/nanodns-ps4.elf dist/nanodns4096.ini dist/SHA256SUMS \
-            "nanodns-13.60-v0.4-13.60.4-install.zip" "nanodns-13.60-v0.4-13.60.4-install.zip.sha256" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "nanoDNS 13.60 · 0.4-13.60.4" \
-            --notes-file release/RELEASE_NOTES.md \
-            --target "$GITHUB_SHA" \
-            --latest
- nanodns4096.ini)" -eq 1719
-  build-ps5:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - name: Checkout SDK
-        uses: actions/checkout@v7
-        with:
-          repository: ps5-payload-dev/sdk
-          path: sdk
-      - name: Setup SDK
-        working-directory: sdk
-        run: |
-          sudo apt update
-          sudo apt install -y clang-18 lld-18
-          make DESTDIR=${{ runner.tool_cache }}/ps5-payload-sdk clean install
-          echo PS5_PAYLOAD_SDK=${{ runner.tool_cache }}/ps5-payload-sdk >> "$GITHUB_ENV"
-      - name: Checkout exact release commit
-        uses: actions/checkout@v7
-      - name: Build console ELF
-        run: |
-          make clean all
-          test -s nanodns.elf
-      - name: Upload PS5 build
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-ps5
-          path: nanodns.elf
-          if-no-files-found: error
-          retention-days: 30
-  build-ps4:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - name: Checkout SDK
-        uses: actions/checkout@v7
-        with:
-          repository: ps4-payload-dev/sdk
-          path: sdk
-      - name: Setup SDK
-        working-directory: sdk
-        run: |
-          sudo apt update
-          sudo apt install -y clang-18 lld-18
-          make DESTDIR=${{ runner.tool_cache }}/ps4-payload-sdk clean install
-          echo PS4_PAYLOAD_SDK=${{ runner.tool_cache }}/ps4-payload-sdk >> "$GITHUB_ENV"
-      - name: Checkout exact release commit
-        uses: actions/checkout@v7
-      - name: Build secondary ELF
-        run: |
-          make -f Makefile.ps4 clean all
-          test -s nanodns-ps4.elf
-      - name: Upload secondary build
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-ps4
-          path: nanodns-ps4.elf
-          if-no-files-found: error
-          retention-days: 30
-  publish:
-    needs: [verify, build-ps5, build-ps4]
-    if: github.repository == 'niakw/nanoDNS-Encore' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      TAG: v0.4-13.60.4
-      BUNDLE: nanodns-13.60-v0.4-13.60.4-install.zip
-    steps:
-      - name: Checkout exact release commit
-        uses: actions/checkout@v7
-      - name: Download console build
-        uses: actions/download-artifact@v8
-        with:
-          name: release-ps5
-          path: dist
-      - name: Download secondary build
-        uses: actions/download-artifact@v8
-        with:
-          name: release-ps4
-          path: dist
-      - name: Package the two-file FTP ZIP and both checksum manifests
-        env:
-          BUNDLE: nanodns-13.60-v0.4-13.60.4-install.zip
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp nanodns4096.ini dist/nanodns4096.ini
-          (
-            cd dist
-            sha256sum nanodns.elf nanodns-ps4.elf nanodns4096.ini > SHA256SUMS
-            sha256sum --check SHA256SUMS
-          )
-          mkdir -p package/data/pldmgr/payloads/local/nanodns package/data/nanodns
-          cp dist/nanodns.elf package/data/pldmgr/payloads/local/nanodns/nanodns.elf
-          cp dist/nanodns4096.ini package/data/nanodns/nanodns4096.ini
-          (cd package && zip -q -X -D "../$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf data/nanodns/nanodns4096.ini)
-          unzip -t "$BUNDLE"
-          test "$(unzip -Z -1 "$BUNDLE" | LC_ALL=C sort)" = "$(printf '%s\n' 'data/nanodns/nanodns4096.ini' 'data/pldmgr/payloads/local/nanodns/nanodns.elf' | LC_ALL=C sort)"
-          cmp dist/nanodns.elf <(unzip -p "$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf)
-          cmp dist/nanodns4096.ini <(unzip -p "$BUNDLE" data/nanodns/nanodns4096.ini)
-          sha256sum "$BUNDLE" > "$BUNDLE.sha256"
-          cat dist/SHA256SUMS "$BUNDLE.sha256"
-      - name: Publish GitHub standard release and checked ZIP
-        shell: bash
-        run: |
-          set -euo pipefail
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "::error::Release tag already exists; refusing to overwrite assets"
-            exit 1
-          fi
-          gh release create "$TAG" \
-            dist/nanodns.elf dist/nanodns-ps4.elf dist/nanodns4096.ini dist/SHA256SUMS \
-            "nanodns-13.60-v0.4-13.60.4-install.zip" "nanodns-13.60-v0.4-13.60.4-install.zip.sha256" \
+            dist/nanodns.elf \
+            dist/nanodns-ps4.elf \
+            dist/nanodns4096.ini \
+            dist/SHA256SUMS \
+            "$BUNDLE" \
+            "$BUNDLE.sha256" \
             --repo "$GITHUB_REPOSITORY" \
             --title "nanoDNS 13.60 · 0.4-13.60.4" \
             --notes-file release/RELEASE_NOTES.md \
