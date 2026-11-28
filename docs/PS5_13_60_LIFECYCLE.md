@@ -19,7 +19,7 @@ The original v0.4 source scanned OS process structures using hard-coded offsets 
 ## Startup sequence
 
 1. The autoloader starts Payload Manager (avoid running both distinct autoload mechanisms at once).
-2. Payload Manager starts one nanoDNS process and displays its original `nanodns.elf` label.
+2. Payload Manager starts one nanoDNS process from the unchanged `nanodns.elf` installation path. The payload requests the resident thread label `nanodns-encore` and logs the syscall result and PID. Display by the manager and the OS process-command field are not yet hardware-verified.
 3. The process loads `/data/nanodns/nanodns.ini`. If missing, it generates a copy of the bundled 124-rule default policy. Existing configs are not overwritten.
 4. The process creates the SceNet pool, then tries IPv4 UDP `127.0.0.1:53`, plus optional IPv6 `::1:53`.
 5. If IPv4 cannot bind, startup aborts and releases SceNet; a second launch must **not** steal a running listener.

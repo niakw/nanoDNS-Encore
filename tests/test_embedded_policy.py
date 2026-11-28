@@ -91,6 +91,12 @@ class PolicyIntegrityTests(unittest.TestCase):
         self.assertIn("build_nodata_response", block)
         self.assertIn("override-servfail", block)
 
+    def test_resident_label_is_distinct_from_installation_path(self):
+        self.assertIn('#define PAYLOAD_PROCESS_LABEL "nanodns-encore"', C)
+        self.assertIn("syscall(SYS_thr_set_name, -1, PAYLOAD_PROCESS_LABEL)", C)
+        self.assertIn("process-label=%s thread-name-rc=%ld errno=%d pid=%ld", C)
+        self.assertIn("ELF := nanodns.elf", (ROOT / "Makefile").read_text())
+
     def test_ordered_four_upstream_defaults(self):
         def upstreams(ini):
             section = ""

@@ -19,7 +19,7 @@ nanoDNS 0.4 recherchait les processus à partir d'offsets internes au système p
 ## Chargement
 
 1. WebKit Autoloader lance Payload Manager (un seul mécanisme d'autoload).
-2. Payload Manager charge nanoDNS, qui conserve son étiquette d'origine `nanodns.elf`.
+2. Payload Manager charge nanoDNS depuis le chemin inchangé de `nanodns.elf`. Le payload demande le nom de thread résident `nanodns-encore` et journalise le résultat de l'appel système et le PID. L'affichage par le gestionnaire et le champ de commande du processus restent à vérifier sur console.
 3. Le fichier `/data/nanodns/nanodns.ini` est lu. S'il est absent, un profil par défaut de 124 règles est créé. Un fichier existant n'est jamais écrasé.
 4. Initialisation de SceNet, puis écoute UDP IPv4 sur `127.0.0.1:53` et éventuellement IPv6 sur `::1:53`.
 5. Si l'écoute IPv4 échoue, la nouvelle instance quitte proprement au lieu de partager le port avec un ancien nanoDNS.

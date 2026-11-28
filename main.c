@@ -24,11 +24,10 @@
 #if defined(PLATFORM_PS4)
 #include <ps4/kernel.h>
 #include <ps4/klog.h>
-#define PAYLOAD_EXEC_NAME "nanodns-ps4.elf"
 #elif defined(PLATFORM_PS5)
 #include <ps5/kernel.h>
 #include <ps5/klog.h>
-#define PAYLOAD_EXEC_NAME "nanodns.elf"
+#define PAYLOAD_PROCESS_LABEL "nanodns-encore"
 #else
 #error "Define PLATFORM_PS4 or PLATFORM_PS5"
 #endif
@@ -2252,8 +2251,11 @@ main(void) {
                        false);
 
 #if defined(PLATFORM_PS5)
-  /* Preserve the original process label for Payload Manager discovery. */
-  (void)syscall(SYS_thr_set_name, -1, PAYLOAD_EXEC_NAME);
+  /* Distinguish the resident thread from the original payload. The ELF
+   * path remains unchanged for local installation/upgrade compatibility. */
+  errno = 0;
+  long process_label_rc = syscall(SYS_thr_set_name, -1, PAYLOAD_PROCESS_LABEL);
+  int process_label_errno = process_label_rc == 0 ? 0 : errno;
 #endif
   signal(SIGINT, on_signal);
   signal(SIGTERM, on_signal);
@@ -2279,6 +2281,11 @@ main(void) {
 
   (void)logger_init(&cfg);
   print_banner();
+#if defined(PLATFORM_PS5)
+  log_printf("[nanodns] process-label=%s thread-name-rc=%ld errno=%d pid=%ld\n",
+             PAYLOAD_PROCESS_LABEL, process_label_rc, process_label_errno,
+             (long)getpid());
+#endif
 
   for(size_t i = 0; i < cfg.warning_count; ++i) {
     log_printf("%s", cfg.warnings[i].text);
