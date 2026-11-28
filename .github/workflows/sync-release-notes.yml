@@ -1,4 +1,4 @@
-name: Sync release 13.60.3 notes without rebuilding binaries
+name: Sync release 13.60.4 notes without rebuilding binaries
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: v0.4-13.60.3
+      TAG: v0.4-13.60.4
     steps:
       - name: Checkout project documentation
         uses: actions/checkout@v7

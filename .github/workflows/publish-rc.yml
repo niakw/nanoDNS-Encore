@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           test -s release/RELEASE_NOTES.md
-          test -s nanodns.ini
+          test -s nanodns4096.ini
           test -f LICENSE
   build-ps5:
     runs-on: ubuntu-24.04
@@ -100,8 +100,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
-      TAG: v0.4-13.60.3
-      BUNDLE: nanodns-13.60-v0.4-13.60.3-install.zip
+      TAG: v0.4-13.60.4
+      BUNDLE: nanodns-13.60-v0.4-13.60.4-install.zip
     steps:
       - name: Checkout exact release commit
         uses: actions/checkout@v7
@@ -117,24 +117,24 @@ jobs:
           path: dist
       - name: Package the two-file FTP ZIP and both checksum manifests
         env:
-          BUNDLE: nanodns-13.60-v0.4-13.60.3-install.zip
+          BUNDLE: nanodns-13.60-v0.4-13.60.4-install.zip
         shell: bash
         run: |
           set -euo pipefail
-          cp nanodns.ini dist/nanodns.ini
+          cp nanodns4096.ini dist/nanodns4096.ini
           (
             cd dist
-            sha256sum nanodns.elf nanodns-ps4.elf nanodns.ini > SHA256SUMS
+            sha256sum nanodns.elf nanodns-ps4.elf nanodns4096.ini > SHA256SUMS
             sha256sum --check SHA256SUMS
           )
           mkdir -p package/data/pldmgr/payloads/local/nanodns package/data/nanodns
           cp dist/nanodns.elf package/data/pldmgr/payloads/local/nanodns/nanodns.elf
-          cp dist/nanodns.ini package/data/nanodns/nanodns.ini
-          (cd package && zip -q -X -D "../$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf data/nanodns/nanodns.ini)
+          cp dist/nanodns4096.ini package/data/nanodns/nanodns4096.ini
+          (cd package && zip -q -X -D "../$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf data/nanodns/nanodns4096.ini)
           unzip -t "$BUNDLE"
-          test "$(unzip -Z -1 "$BUNDLE" | LC_ALL=C sort)" = "$(printf '%s\n' 'data/nanodns/nanodns.ini' 'data/pldmgr/payloads/local/nanodns/nanodns.elf' | LC_ALL=C sort)"
+          test "$(unzip -Z -1 "$BUNDLE" | LC_ALL=C sort)" = "$(printf '%s\n' 'data/nanodns/nanodns4096.ini' 'data/pldmgr/payloads/local/nanodns/nanodns.elf' | LC_ALL=C sort)"
           cmp dist/nanodns.elf <(unzip -p "$BUNDLE" data/pldmgr/payloads/local/nanodns/nanodns.elf)
-          cmp dist/nanodns.ini <(unzip -p "$BUNDLE" data/nanodns/nanodns.ini)
+          cmp dist/nanodns4096.ini <(unzip -p "$BUNDLE" data/nanodns/nanodns4096.ini)
           sha256sum "$BUNDLE" > "$BUNDLE.sha256"
           cat dist/SHA256SUMS "$BUNDLE.sha256"
       - name: Publish GitHub standard release and checked ZIP
@@ -146,10 +146,10 @@ jobs:
             exit 1
           fi
           gh release create "$TAG" \
-            dist/nanodns.elf dist/nanodns-ps4.elf dist/nanodns.ini dist/SHA256SUMS \
-            "nanodns-13.60-v0.4-13.60.3-install.zip" "nanodns-13.60-v0.4-13.60.3-install.zip.sha256" \
+            dist/nanodns.elf dist/nanodns-ps4.elf dist/nanodns4096.ini dist/SHA256SUMS \
+            "nanodns-13.60-v0.4-13.60.4-install.zip" "nanodns-13.60-v0.4-13.60.4-install.zip.sha256" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "nanoDNS 13.60 · 0.4-13.60.3" \
+            --title "nanoDNS 13.60 · 0.4-13.60.4" \
             --notes-file release/RELEASE_NOTES.md \
             --target "$GITHUB_SHA" \
             --latest
