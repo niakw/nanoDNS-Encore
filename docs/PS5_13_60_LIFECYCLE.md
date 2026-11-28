@@ -46,3 +46,7 @@ Rest mode may suspend and later resume existing sockets. console 13.60 behavior 
 ## Required evidence before release
 
 A green console SDK build; 124-rule parity tests; no leakage in known blocked A, AAAA, ANY and unsupported multi-question requests; at least one authorized name resolving; stable single-instance/duplicate behavior; clean 13.60 power off, physical-button power on, the controller power on and rest/resume; no filesystem repair warning; consistent logs through shutdown. See [test plan](TEST_PLAN.md).
+
+## 2026-11-28: controller power-on recurrence
+
+The user reported another failed controller power-on, without a system error this time. The earlier successful trials remain historical only. The resident now acquires a nonblocking kernel record lock before touching the configuration, rotating logs or initializing SceNet. The lock file stays in place; the kernel releases the lock when the process exits. A lock failure aborts startup rather than allowing duplicate initialization. UDP sockets are nonblocking and upstream polls check the stop flag at most every 100 ms of reply waiting; startup cancellation reaches cleanup. No guessed power-management callback, firmware offset, or wake fix is claimed. Native lock support, controller wake, shutdown and rest/resume still require isolated hardware qualification.

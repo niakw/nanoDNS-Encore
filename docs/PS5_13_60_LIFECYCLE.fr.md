@@ -43,3 +43,7 @@ La reprise depuis le mode repos peut réutiliser des sockets et états réseau. 
 ## Critères de validation
 
 Build SDK console vert ; cohérence des 124 règles ; absence de fuite DNS pour les noms interdits testés ; résolution des noms autorisés ; instances uniques ; arrêt normal, veille/reprise, démarrage la manette et absence de réparation du stockage. Voir le [plan de tests](TEST_PLAN.fr.md).
+
+## 28 novembre 2026 : récidive du démarrage par manette
+
+Un nouvel échec de démarrage par manette a été signalé, sans erreur système cette fois. Les anciens essais positifs restent historiques. Le résident acquiert désormais un verrou noyau non bloquant avant de modifier la configuration, de faire tourner les journaux ou d'initialiser SceNet. Le fichier persiste mais le verrou est libéré par le noyau à la sortie du processus. En cas d'échec du verrou, le démarrage est refusé. Les sockets UDP sont non bloquantes ; l'attente upstream vérifie l'arrêt par tranches de 100 ms maximum et une interruption au démarrage rejoint le nettoyage. Aucun callback d'alimentation ni offset supposé n'est ajouté. Le réveil par manette, la veille et le verrou natif restent à qualifier sur console isolée.

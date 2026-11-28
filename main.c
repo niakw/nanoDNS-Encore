@@ -37,6 +37,7 @@
 #define APP_COPYRIGHT "(c) Drakmor"
 #define DATA_DIR "/data/nanodns"
 #define CONFIG_PATH DATA_DIR "/nanodns.ini"
+#define INSTANCE_LOCK_PATH DATA_DIR "/resident.lock"
 #define DEFAULT_LOG_PATH DATA_DIR "/nanodns.log"
 #define LOG_MAX_BYTES (4u * 1024u * 1024u)
 #define DNS_PORT 53
@@ -914,10 +915,37 @@ ensure_runtime_dir_exists(const char *path) {
   }
 
   if(mkdir(path, 0777) != 0) {
+    if(errno == EEXIST && stat(path, &st) == 0 && S_ISDIR(st.st_mode)) return 0;
     return -1;
   }
 
   return 1;
+}
+
+/* Kernel-owned record lock: no PID guessing, stale PID files or forced kill.
+ * The file persists intentionally; closing the fd/process releases the lock. */
+static int
+acquire_instance_lock(const char *path) {
+  struct stat st;
+  struct flock lock;
+  int fd = open(path, O_RDWR | O_CREAT | O_NOFOLLOW, 0600);
+  if(fd < 0) return -1;
+  if(fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
+    int saved = errno ? errno : EINVAL;
+    close(fd);
+    errno = saved;
+    return -1;
+  }
+  memset(&lock, 0, sizeof(lock));
+  lock.l_type = F_WRLCK;
+  lock.l_whence = SEEK_SET;
+  if(fcntl(fd, F_SETLK, &lock) != 0) {
+    int saved = errno;
+    close(fd);
+    errno = saved;
+    return -1;
+  }
+  return fd;
 }
 
 static int
@@ -1672,6 +1700,14 @@ log_dns_response(const uint8_t *packet, size_t packet_len, const char *via) {
 }
 
 static int
+set_socket_nonblocking(int fd) {
+  int flags = fcntl(fd, F_GETFL, 0);
+  if(flags < 0 || fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0)
+    return -1;
+  return 0;
+}
+
+static int
 open_upstream_socket(const upstream_t *upstream) {
   struct sockaddr_in upstream_addr;
   int fd;
@@ -1688,6 +1724,10 @@ open_upstream_socket(const upstream_t *upstream) {
     return -1;
   }
 
+  if(set_socket_nonblocking(fd) != 0) {
+    close(fd);
+    return -1;
+  }
   if(connect(fd, (struct sockaddr *)&upstream_addr, sizeof(upstream_addr)) !=
      0) {
     log_printf("[nanodns] upstream %s connect failed: %s\n", upstream->text,
@@ -1754,6 +1794,12 @@ open_server_socket4(const app_config_t *cfg) {
     return -1;
   }
 
+  if(set_socket_nonblocking(fd) != 0) {
+    log_errno("nonblocking(server-ipv4)");
+    close(fd);
+    return -1;
+  }
+
   /* Exclusive UDP port ownership: never share DNS port 53 with another
    * nanoDNS instance. A duplicate load must fail instead of stealing queries. */
   memset(&listen_addr, 0, sizeof(listen_addr));
@@ -1784,6 +1830,12 @@ open_server_socket6(const app_config_t *cfg) {
   if(fd < 0) {
     log_printf("[nanodns] warning: IPv6 listener unavailable: %s\n",
                strerror(errno));
+    return -1;
+  }
+
+  if(set_socket_nonblocking(fd) != 0) {
+    log_errno("nonblocking(server-ipv6)");
+    close(fd);
     return -1;
   }
 
@@ -1933,13 +1985,11 @@ forward_query_to_upstream(const app_config_t *cfg, const uint8_t *request,
         break;
       }
 
-      poll_rc = poll(&pfd, 1, (int)timeout_ms);
-      if(poll_rc == 0) {
-        log_printf("[nanodns] upstream %s timed out\n",
-                   cfg->upstreams[i].text);
-        close_upstream_socket(&upstream_fds[i]);
-        break;
-      }
+      /* Recheck stop even if the signal arrived between the condition and poll. */
+      int wait_ms = timeout_ms > 100 ? 100 : (int)timeout_ms;
+      poll_rc = poll(&pfd, 1, wait_ms);
+      if(!g_running) return -1;
+      if(poll_rc == 0) continue;
 
       if(poll_rc < 0) {
         if(errno == EINTR) {
@@ -2023,6 +2073,7 @@ send_dns_response_to_client(int server_fd, const uint8_t *response,
                             const struct sockaddr *client_addr,
                             socklen_t client_len, const char *via,
                             const char *error_context) {
+  if(!g_running) return;
   if(sendto(server_fd, response, response_len, 0, client_addr, client_len) <
      0) {
     log_errno(error_context);
@@ -2240,6 +2291,8 @@ main(void) {
   int config_loaded = 0;
   int data_dir_state;
   int data_dir_errno = 0;
+  int instance_fd = -1;
+  struct sigaction stop_action;
 
   for(size_t i = 0; i < MAX_UPSTREAMS; ++i) {
     upstream_fds[i] = -1;
@@ -2257,13 +2310,27 @@ main(void) {
   long process_label_rc = syscall(SYS_thr_set_name, -1, PAYLOAD_PROCESS_LABEL);
   int process_label_errno = process_label_rc == 0 ? 0 : errno;
 #endif
-  signal(SIGINT, on_signal);
-  signal(SIGTERM, on_signal);
+  memset(&stop_action, 0, sizeof(stop_action));
+  stop_action.sa_handler = on_signal;
+  sigemptyset(&stop_action.sa_mask);
+  if(sigaction(SIGINT, &stop_action, NULL) != 0 ||
+     sigaction(SIGTERM, &stop_action, NULL) != 0) {
+    return EXIT_FAILURE;
+  }
 
   data_dir_state = ensure_runtime_dir_exists(DATA_DIR);
   if(data_dir_state < 0) {
     data_dir_errno = errno;
   }
+
+  /* Admission precedes config/log mutations and all SceNet work. */
+  if(!g_running) return EXIT_SUCCESS;
+  instance_fd = acquire_instance_lock(INSTANCE_LOCK_PATH);
+  if(instance_fd < 0) {
+    log_printf("[nanodns] startup refused: instance lock unavailable (errno=%d)\n", errno);
+    return EXIT_FAILURE;
+  }
+  if(!g_running) { close(instance_fd); return EXIT_SUCCESS; }
 
   config_state = ensure_default_config_exists(CONFIG_PATH);
   if(config_state < 0) {
@@ -2343,10 +2410,17 @@ main(void) {
   /* Never SIGKILL existing instances: bypassing their socket/NetPool
    * cleanup can leave the platform in an inconsistent shutdown state.
    * A second instance will fail to bind the already occupied DNS port. */
+  if(!g_running) {
+    logger_fini();
+    config_release(&cfg);
+    close(instance_fd);
+    return EXIT_SUCCESS;
+  }
   if(elevate_privileges() != 0) {
     close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
     logger_fini();
     config_release(&cfg);
+    close(instance_fd);
     return EXIT_FAILURE;
   }
 
@@ -2354,15 +2428,17 @@ main(void) {
     close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
     logger_fini();
     config_release(&cfg);
+    close(instance_fd);
     return 1;
   }
 
-  for(size_t i = 0; i < SERVER_LISTENER_COUNT; ++i) {
+  for(size_t i = 0; i < SERVER_LISTENER_COUNT && g_running; ++i) {
     (void)open_server_listener(&cfg, &listeners[i]);
   }
 
   /* IPv6 alone does not protect an IPv4-configured console.  Most
    * importantly, never run half-active beside an old IPv4 nanoDNS. */
+  if(!g_running) goto shutdown;
   if(listeners[SERVER_LISTENER_IPV4].fd < 0) {
     log_printf("[nanodns] startup aborted: IPv4 DNS port unavailable "
                "(duplicate payload or invalid bind address)\n");
@@ -2373,6 +2449,7 @@ main(void) {
     net_fini();
     logger_fini();
     config_release(&cfg);
+    close(instance_fd);
     return EXIT_FAILURE;
   }
 
@@ -2387,7 +2464,7 @@ main(void) {
     log_printf("[nanodns] continuing without IPv6 listener\n");
   }
 
-  if(!cfg.quiet_enabled) {
+  if(g_running && !cfg.quiet_enabled) {
     (void)send_startup_notification(
         &cfg, listeners[SERVER_LISTENER_IPV4].fd >= 0,
         listeners[SERVER_LISTENER_IPV6].fd >= 0);
@@ -2453,6 +2530,7 @@ main(void) {
     }
   }
 
+shutdown:
   log_printf("[nanodns] shutdown: closing local listeners\n");
   for(size_t i = 0; i < SERVER_LISTENER_COUNT; ++i) {
     invalidate_server_listener(&listeners[i]);
@@ -2464,5 +2542,6 @@ main(void) {
   log_printf("[nanodns] shutdown: complete\n");
   logger_fini();
   config_release(&cfg);
+  close(instance_fd);
   return 0;
 }

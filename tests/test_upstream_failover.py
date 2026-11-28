@@ -32,7 +32,7 @@ static ssize_t fake_send(int fd, const void *b, size_t n, int flags) {
     (void)b; (void)flags; calls[fd]++; return (ssize_t)n;
 }
 static int fake_poll(struct pollfd *p, nfds_t count, int timeout) {
-    assert(count == 1); assert(timeout == 1500);
+    assert(count == 1); assert(timeout > 0 && timeout <= 100);
     if (outcomes[p->fd] < 0) { clock_ms += timeout; return 0; }
     p->revents = POLLIN; return 1;
 }
