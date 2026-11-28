@@ -36,7 +36,8 @@
 #define APP_VERSION "0.4-13.60.4-dev"
 #define APP_COPYRIGHT "(c) Drakmor"
 #define DATA_DIR "/data/nanodns"
-#define CONFIG_PATH DATA_DIR "/nanodns.ini"
+#define CONFIG_PATH DATA_DIR "/nanodns4096.ini"
+#define LEGACY_CONFIG_PATH DATA_DIR "/nanodns.ini"
 #define INSTANCE_LOCK_PATH DATA_DIR "/resident.lock"
 #define DEFAULT_LOG_PATH DATA_DIR "/nanodns.log"
 #define LOG_MAX_BYTES (4u * 1024u * 1024u)
@@ -151,7 +152,7 @@ static const char *k_default_config =
     "# nanoDNS Console Blocklist — extended multi-platform publisher profile\n"
     "# Updated: 2026-11-27 | Base configuration previously tested on PS5 13.60; expanded profile unqualified.\n"
     "# Community-maintained best-effort DNS filtering; NOT a firewall.\n"
-    "# Installed path: /data/nanodns/nanodns.ini\n"
+    "# Installed path: /data/nanodns/nanodns4096.ini\n"
     "# Default profile for 0.4-13.60.4 development candidates; NOT HARDWARE-QUALIFIED.\n"
     "# 1719 overrides; source capacity 4096; not compatible with the published 128-entry ELF.\n"
     "# Broad publisher inventory; candidate domains, not a verified endpoint census.\n"
@@ -4161,6 +4162,25 @@ acquire_instance_lock(const char *path) {
   return fd;
 }
 
+/* Choose one profile; never downgrade on invalid or inaccessible paths. */
+static int
+select_config_path(const char *preferred, const char *legacy,
+                   const char **selected) {
+  struct stat st;
+  *selected = preferred;
+  if(lstat(preferred, &st) == 0) return 0;
+  if(errno != ENOENT) return -1;
+  if(lstat(legacy, &st) == 0) {
+    *selected = legacy;
+    return 0;
+  }
+  if(errno != ENOENT) {
+    *selected = legacy;
+    return -1;
+  }
+  return 1;
+}
+
 static int
 ensure_default_config_exists(const char *path) {
   FILE *fp;
@@ -5499,7 +5519,8 @@ main(void) {
   server_listener_t listeners[SERVER_LISTENER_COUNT];
   struct pollfd pfds[SERVER_LISTENER_COUNT];
   size_t poll_listener_index[SERVER_LISTENER_COUNT];
-  int config_state;
+  int config_state = 0;
+  const char *config_path = CONFIG_PATH;
   int config_errno = 0;
   int config_loaded = 0;
   int data_dir_state;
@@ -5545,12 +5566,16 @@ main(void) {
   }
   if(!g_running) { close(instance_fd); return EXIT_SUCCESS; }
 
-  config_state = ensure_default_config_exists(CONFIG_PATH);
-  if(config_state < 0) {
+  int selection = select_config_path(CONFIG_PATH, LEGACY_CONFIG_PATH, &config_path);
+  if(selection == 1) {
+    config_state = ensure_default_config_exists(config_path);
+    if(config_state < 0) config_errno = errno;
+  } else if(selection < 0) {
+    config_state = -1;
     config_errno = errno;
   }
 
-  if(load_config(CONFIG_PATH, &cfg) != 0) {
+  if(selection < 0 || load_config(config_path, &cfg) != 0) {
     config_release(&cfg);
     config_set_defaults(&cfg);
     config_apply_builtin_upstreams(&cfg);
@@ -5579,16 +5604,19 @@ main(void) {
   }
 
   if(config_state == 1) {
-    log_printf("[nanodns] created default config at %s\n", CONFIG_PATH);
+    log_printf("[nanodns] created default config at %s\n", config_path);
   } else if(config_state < 0) {
-    log_printf("[nanodns] could not create %s: %s\n", CONFIG_PATH,
+    log_printf("[nanodns] could not select/create %s: %s\n", config_path,
                strerror(config_errno));
   }
 
   if(!config_loaded) {
-    log_printf("[nanodns] could not fully load %s, using fallback defaults\n",
-               CONFIG_PATH);
+    log_printf("[nanodns] could not fully load %s, using compiled defaults only\n",
+               config_path);
   }
+  log_printf("[nanodns] config-source=%s selected-path=%s mandatory-rules=%zu\n",
+             config_loaded ? "file" : "compiled", config_path,
+             (size_t)PROTECTED_RULE_COUNT);
 
   if(g_log_file != NULL) {
     log_printf("[nanodns] log file: %s\n", cfg.log_path);

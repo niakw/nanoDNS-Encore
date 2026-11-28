@@ -10,7 +10,7 @@ class InstanceLifecycle(unittest.TestCase):
     def test_lock_rejects_duplicate_and_releases_on_process_exit(self):
         src = (ROOT / "main.c").read_text()
         start = src.index("static int\nacquire_instance_lock(")
-        end = src.index("\nstatic int\nensure_default_config_exists(", start)
+        end = src.index("\n/* Choose one profile", start)
         helper = src[start:end]
         program = """#define _POSIX_C_SOURCE 200809L
 #include <fcntl.h>
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     def test_admission_precedes_side_effects(self):
         src=(ROOT/"main.c").read_text().split("main(void) {",1)[1]
         lock=src.index("acquire_instance_lock(INSTANCE_LOCK_PATH)")
-        for token in ("ensure_default_config_exists(CONFIG_PATH)", "logger_init(&cfg)", "net_init()"):
+        for token in ("select_config_path(CONFIG_PATH, LEGACY_CONFIG_PATH", "ensure_default_config_exists(config_path)", "logger_init(&cfg)", "net_init()"):
             self.assertLess(lock,src.index(token))
         self.assertIn("if(!g_running) goto shutdown;",src)
         self.assertIn("close(instance_fd);",src)
