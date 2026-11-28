@@ -152,19 +152,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          assets=(
+            dist/nanodns.elf
+            dist/nanodns-ps4.elf
+            dist/nanodns4096.ini
+            dist/SHA256SUMS
+            "$BUNDLE"
+            "$BUNDLE.sha256"
+          )
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "::error::Release tag already exists; refusing to overwrite assets"
-            exit 1
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+              -f sha="$GITHUB_SHA" -F force=true >/dev/null
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "nanoDNS 13.60 · 0.4-13.60.4" \
+              --notes-file release/RELEASE_NOTES.md \
+              --latest
+            gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "nanoDNS 13.60 · 0.4-13.60.4" \
+              --notes-file release/RELEASE_NOTES.md \
+              --target "$GITHUB_SHA" \
+              --latest
           fi
-          gh release create "$TAG" \
-            dist/nanodns.elf \
-            dist/nanodns-ps4.elf \
-            dist/nanodns4096.ini \
-            dist/SHA256SUMS \
-            "$BUNDLE" \
-            "$BUNDLE.sha256" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "nanoDNS 13.60 · 0.4-13.60.4" \
-            --notes-file release/RELEASE_NOTES.md \
-            --target "$GITHUB_SHA" \
-            --latest
