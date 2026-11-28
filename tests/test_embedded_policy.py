@@ -9,6 +9,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 C = (ROOT / "main.c").read_text(encoding="utf-8")
 INI = (ROOT / "nanodns.ini").read_text(encoding="utf-8")
+EXT = (ROOT / "nanodns4096.ini").read_text(encoding="utf-8")
 EXAMPLE = (ROOT / "nanodns.ini.example").read_text(encoding="utf-8")
 
 
@@ -66,11 +67,12 @@ class PolicyIntegrityTests(unittest.TestCase):
         self.assertEqual((rules, exceptions), get_rules(EXAMPLE))
 
     def test_binary_mandatory_rules_are_identical(self):
-        masks = [m for m, _ in get_rules(INI)[0]]
+        masks = [m for m, _ in get_rules(EXT)[0]]
+        self.assertEqual(len(masks), 1719)
         self.assertEqual(embedded_masks(), masks)
 
     def test_builtin_defaults_identical_to_shipped_rules(self):
-        self.assertEqual(get_rules(embedded_default()), get_rules(INI))
+        self.assertEqual(get_rules(embedded_default()), get_rules(EXT))
 
     def test_fail_closed_before_exceptions(self):
         a = C.index("if(protected_domain_match(question.qname))")

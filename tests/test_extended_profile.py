@@ -40,7 +40,7 @@ class ExtendedProfileTests(unittest.TestCase):
         self.assertTrue(all(ip == "0.0.0.0" for _, ip in extended))
         self.assertLess(EXT.stat().st_size, 4096 * 1024)
 
-    def test_extended_profile_is_never_packaged_as_default(self):
+    def test_historical_release_packaging_unchanged(self):
         for rel in (
             ".github/workflows/publish-rc.yml",
             ".github/workflows/package-install-zip.yml",
@@ -49,9 +49,9 @@ class ExtendedProfileTests(unittest.TestCase):
             self.assertIn("nanodns.ini", text)
             self.assertNotIn("nanodns4096.ini", text)
 
-    def test_header_marks_profile_optional_and_unqualified(self):
+    def test_header_marks_profile_candidate_and_unqualified(self):
         header = "\n".join(EXT.read_text(encoding="utf-8").splitlines()[:16]).lower()
-        self.assertIn("optional", header)
+        self.assertIn("development candidates", header)
         self.assertIn("not hardware-qualified", header)
         self.assertIn("4096", header)
 

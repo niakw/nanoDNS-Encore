@@ -52,3 +52,18 @@ jobs:
           path: nanodns.elf
           if-no-files-found: error
 
+
+      - name: Build extended-profile candidate installation ZIP
+        run: |
+          mkdir -p candidate/data/pldmgr/payloads/local/nanodns candidate/data/nanodns
+          cp nanodns.elf candidate/data/pldmgr/payloads/local/nanodns/nanodns.elf
+          cp nanodns4096.ini candidate/data/nanodns/nanodns.ini
+          (cd candidate && zip -q -X -D "../nanodns-candidate-${GITHUB_SHA}.zip" data/pldmgr/payloads/local/nanodns/nanodns.elf data/nanodns/nanodns.ini)
+          unzip -t "nanodns-candidate-${GITHUB_SHA}.zip"
+          cmp nanodns4096.ini <(unzip -p "nanodns-candidate-${GITHUB_SHA}.zip" data/nanodns/nanodns.ini)
+      - name: Upload candidate installation ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: candidate-install
+          path: nanodns-candidate-*.zip
+          if-no-files-found: error

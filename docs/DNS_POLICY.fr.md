@@ -37,3 +37,5 @@ Les règles personnalisées supplémentaires peuvent toujours entraîner des fau
 Les communications précédant le chargement, les IP directes, caches DNS, DNS alternatifs ou chiffrés, DNS sur TCP et noms inconnus sont hors du périmètre. Pour une interdiction WAN stricte, maintenir un pare-feu externe en IPv4 et IPv6.
 
 Les motifs étendus `<hostname-or-mask-from-INI>`, `<hostname-or-mask-from-INI>` ou l'alias partagé `<hostname-or-mask-from-INI>` peuvent bloquer des domaines légitimes. Voir [sécurité](../SECURITY.fr.md) et [tests](TEST_PLAN.fr.md).
+
+Le candidat de développement 0.4-13.60.4 utilise les 1719 règles étendues comme politique obligatoire embarquée et configuration générée par défaut. Le ZIP candidat copie ce profil au chemin habituel. Les fichiers des versions publiées restent inchangés. Les configurations existantes ne sont pas écrasées automatiquement ; les masques embarqués restent actifs. Qualification matérielle en attente.
