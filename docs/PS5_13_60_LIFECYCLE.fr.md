@@ -47,3 +47,7 @@ Build SDK console vert ; cohérence des 124 règles ; absence de fuite DNS pour 
 ## 28 novembre 2026 : récidive du démarrage par manette
 
 Un nouvel échec de démarrage par manette a été signalé, sans erreur système cette fois. Les anciens essais positifs restent historiques. Le résident acquiert désormais un verrou noyau non bloquant avant de modifier la configuration, de faire tourner les journaux ou d'initialiser SceNet. Le fichier persiste mais le verrou est libéré par le noyau à la sortie du processus. En cas d'échec du verrou, le démarrage est refusé. Les sockets UDP sont non bloquantes ; l'attente upstream vérifie l'arrêt par tranches de 100 ms maximum et une interruption au démarrage rejoint le nettoyage. Aucun callback d'alimentation ni offset supposé n'est ajouté. Le réveil par manette, la veille et le verrou natif restent à qualifier sur console isolée.
+
+## 28 novembre 2026 : contre-revue après le gel du firewall
+
+Le résident DNS reste indépendant et ne fait aucun appel de contrôle IPFW. La boucle des sockets et l'attente sans écoute vérifient l'arrêt par tranches de 100 ms ; l'annulation est vérifiée avant l'initialisation SceNet et les tentatives de réouverture. Hors debug, le journal indique le profil et le nombre de règles, sans écrire chaque règle au démarrage ; les traces de requêtes restent disponibles. Aucun changement de filtrage, de priorité INI, de résolveur ou de privilèges. Le gel de la console et le réveil par manette restent à qualifier.

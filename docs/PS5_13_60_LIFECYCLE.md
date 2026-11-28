@@ -50,3 +50,7 @@ A green console SDK build; 124-rule parity tests; no leakage in known blocked A,
 ## 2026-11-28: controller power-on recurrence
 
 The user reported another failed controller power-on, without a system error this time. The earlier successful trials remain historical only. The resident now acquires a nonblocking kernel record lock before touching the configuration, rotating logs or initializing SceNet. The lock file stays in place; the kernel releases the lock when the process exits. A lock failure aborts startup rather than allowing duplicate initialization. UDP sockets are nonblocking and upstream polls check the stop flag at most every 100 ms of reply waiting; startup cancellation reaches cleanup. No guessed power-management callback, firmware offset, or wake fix is claimed. Native lock support, controller wake, shutdown and rest/resume still require isolated hardware qualification.
+
+## 2026-11-28: coexistence review after firewall hard lock
+
+The DNS resident remains independent and performs no IPFW control calls. The main listener poll and idle wait now check shutdown in 100 ms slices; cancellation is checked before SceNet initialization and listener retries. With debug disabled, startup logs the profile and rule count rather than synchronously writing each rule; per-query evidence remains enabled. No filtering, INI precedence, resolver or privilege changes are made. This does not establish the cause of the console freeze or qualify controller wake.

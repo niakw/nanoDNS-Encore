@@ -5645,13 +5645,16 @@ main(void) {
     log_printf("[nanodns] upstream[%zu] = %s\n", i, cfg.upstreams[i].text);
   }
 
-  for(size_t i = 0; i < cfg.rule_count; ++i) {
-    log_printf("[nanodns] rule[%zu] = %s -> %s\n", i, cfg.rules[i].mask,
-               cfg.rules[i].text);
-  }
-
-  for(size_t i = 0; i < cfg.exception_count; ++i) {
-    log_printf("[nanodns] exception[%zu] = %s\n", i, cfg.exceptions[i].mask);
+  /* Keep per-query evidence, but avoid thousands of synchronous startup
+   * writes on the console unless explicit debug output is requested. */
+  if(cfg.debug_enabled) {
+    for(size_t i = 0; i < cfg.rule_count && g_running; ++i) {
+      log_printf("[nanodns] rule[%zu] = %s -> %s\n", i, cfg.rules[i].mask,
+                 cfg.rules[i].text);
+    }
+    for(size_t i = 0; i < cfg.exception_count && g_running; ++i) {
+      log_printf("[nanodns] exception[%zu] = %s\n", i, cfg.exceptions[i].mask);
+    }
   }
 
   /* Never SIGKILL existing instances: bypassing their socket/NetPool
@@ -5671,6 +5674,12 @@ main(void) {
     return EXIT_FAILURE;
   }
 
+  if(!g_running) {
+    logger_fini();
+    config_release(&cfg);
+    close(instance_fd);
+    return EXIT_SUCCESS;
+  }
   if(net_init() != 0) {
     close_upstream_sockets(upstream_fds, MAX_UPSTREAMS);
     logger_fini();
@@ -5722,7 +5731,7 @@ main(void) {
     int64_t current_ms = now_ms();
     int poll_rc;
 
-    for(size_t i = 0; i < SERVER_LISTENER_COUNT; ++i) {
+    for(size_t i = 0; i < SERVER_LISTENER_COUNT && g_running; ++i) {
       if(listeners[i].fd < 0 && listeners[i].retry_enabled &&
          current_ms >= listeners[i].retry_at_ms) {
         log_server_listener_addr(&cfg, &listeners[i],
@@ -5734,9 +5743,11 @@ main(void) {
       }
     }
 
+    if(!g_running) break;
     if(listeners[SERVER_LISTENER_IPV4].fd < 0 &&
        listeners[SERVER_LISTENER_IPV6].fd < 0) {
-      sleep(1);
+      struct timespec idle={.tv_sec=0,.tv_nsec=100000000L};
+      (void)nanosleep(&idle,NULL);
       continue;
     }
 
@@ -5752,7 +5763,8 @@ main(void) {
       ++poll_count;
     }
 
-    poll_rc = poll(pfds, poll_count, 1000);
+    poll_rc = poll(pfds, poll_count, 100);
+    if(!g_running) break;
     if(poll_rc == 0) {
       continue;
     }
