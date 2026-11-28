@@ -3,10 +3,16 @@
 
 **Language:** English (default) | [Français](CHANGELOG.fr.md)
 
-## Unreleased — source after 0.4-13.60.3
 
-- Replace the fixed `MAX_RULES=128` override array and `MAX_EXCEPTIONS=128` exception array with bounded dynamic heap storage. The configuration file is capped at 4 MiB instead of silently truncating at 128 overrides; the 124 mandatory masks remain a separate compiled policy and keep precedence over user exceptions/overrides.
-- This is source-only until a new current-generation console binary is built and hardware-qualified; the published 0.4-13.60.3 ELF retains the historical 128-entry override table.
+## 0.4-13.60.4 — extended policy release, firmware 13.60 DNS-path user test passed (2026-11-28)
+
+- Promote bounded dynamic policy storage to release behavior: 4,096 overrides + 4,096 exceptions, 4 MiB INI ceiling.
+- Ship and compile the 1719-rule `nanodns4096.ini` policy, including the historical 124-rule canonical core.
+- Prefer `nanodns4096.ini`; use legacy `nanodns.ini` only when absent, with no merge/double management.
+- Bound listener shutdown waits and reduce startup logging without changing DNS policy.
+- Hardware log: 1719 rules / 0 exceptions, both loopback listeners, **15/15 protected A queries blocked locally** and **7/7 permitted A queries resolved upstream**, no runtime error visible.
+- Shutdown/rest/wake, AAAA, later-upstream failover, repeated cycles and endurance remain open.
+
 ## 0.4-13.60.3 — DNS migration (2026-11-24)
 
 - Replace Quad9 after its withdrawal from France: Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted.

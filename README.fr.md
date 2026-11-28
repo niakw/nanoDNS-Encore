@@ -4,7 +4,7 @@
 
 ### Des règles DNS obligatoires, un arrêt plus propre et un payload vérifiable.
 
-**124 motifs protégés intégrés · Control D + AdGuard DNS · Tests natifs · Cycle de vie fiabilisé**
+**1719 motifs protégés intégrés · Control D + AdGuard DNS · Tests natifs · Cycle de vie fiabilisé**
 
 **Langues :** [English (default)](README.md) · Français
 
@@ -14,13 +14,14 @@
 
 ---
 
-## Release 0.4-13.60.3 — migration DNS (24 novembre 2026)
 
-**0.4-13.60.3 utilise Control D sans filtrage en priorité, AdGuard DNS sans filtrage en secours. Pas encore testé sur console.** Quad9 a cessé de servir les utilisateurs français le 24 novembre 2026. Ordre des DNS : `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Chaque serveur dispose de 1 500 ms de délai de réponse ; SERVFAIL/REFUSED déclenchent également le secours suivant. Les 124 règles obligatoires restent intactes. Aucun filtrage antimalware ou publicitaire supplémentaire par ces profils. Remplacer les deux fichiers ELF et INI ; les deux DNS de la console restent `127.0.0.1`.
+## Release 0.4-13.60.4 — profil obligatoire étendu, test utilisateur du 28 novembre 2026
 
-## Code source actuel après 0.4-13.60.3 — capacité des règles
+**0.4-13.60.4 est TESTÉE PAR UTILISATEUR sur firmware 13.60 pour le démarrage, la sélection du profil, le blocage des requêtes A protégées et la résolution amont de requêtes A autorisées.** Le journal fourni correspond au build de développement .4 devenu cette Release : sélection de `/data/nanodns/nanodns4096.ini`, **1719 règles / 0 exception**, deux écoutes loopback actives, **15/15 requêtes A protégées observées** répondues localement en `0.0.0.0`, et **7/7 requêtes A autorisées observées** résolues via le premier DNS amont. Aucune erreur runtime n'apparaît dans la trace.
 
-Les anciens tableaux fixes de **128 overrides et 128 exceptions ont été supprimés sur `main`**. Le code source actuel utilise un stockage dynamique borné pour ces deux listes, avec une limite globale de 4 Mio pour le fichier de configuration ; les 124 motifs obligatoires compilés restent séparés et prioritaires. La CI vise **4 096 overrides + 4 096 exceptions** avec les fonctions de stockage de production sous sanitizers. **L'ELF 0.4-13.60.3 publié conserve encore les anciennes tables de 128 entrées** jusqu'à reconstruction et qualification matérielle d'un nouveau binaire.
+La Release conserve le stockage dynamique borné (**4 096 overrides + 4 096 exceptions**, INI limité à 4 Mio). Le noyau canonique historique de 124 règles reste inclus dans les 1719 règles obligatoires. `nanodns4096.ini` est prioritaire ; `nanodns.ini` n'est utilisé qu'en repli si le fichier prioritaire est absent. Les deux profils ne sont jamais fusionnés.
+
+**Limite du test :** ce journal .4 ne contient pas de séquence d'extinction et ne démontre pas la veille/reprise, le réveil à la manette, AAAA, le basculement vers les DNS amont suivants, les cycles répétés ou l'endurance.
 
 ## Ancienne Release 0.4-13.60.2 — preuves matérielles
 
@@ -30,7 +31,7 @@ Les anciens tableaux fixes de **128 overrides et 128 exceptions ont été suppri
 
 | Cible | État des tests utilisateurs | Périmètre |
 | --- | --- | --- |
-| Console de génération actuelle, firmware **13.60** | **0.4-13.60.1 et 0.4-13.60.2 TESTÉS ; démarrage, filtrage A et extinction/rallumage réussis sur 0.4-13.60.2 ; 0.4-13.60.3 à retester** | Le binaire précédent a démarré, bloqué les requêtes A et permis une extinction/rallumage sans anomalie. L'ELF 0.4-13.60.2 a bloqué 5/5 requêtes A sur console 13.60 ; son extinction/rallumage a aussi été confirmée par l'utilisateur |
+| Console de génération actuelle, firmware **13.60** | **0.4-13.60.4 TESTÉE pour démarrage et chemin DNS ; ancien essai extinction/rallumage 0.4-13.60.2 réussi** | .4 charge 1719/0, bloque 15/15 requêtes A protégées observées et résout 7/7 requêtes A autorisées observées. Extinction/veille/réveil .4 non vérifiés |
 | Même génération, **autres firmwares** | **NON VALIDÉ PAR UN UTILISATEUR** | La compilation SDK et les tests automatiques ne sont pas des tests sur console |
 | Binaire pour console de génération précédente, **tous firmwares** | **NON VALIDÉ PAR UN UTILISATEUR** | Compilation SDK réussie, mais aucun retour matériel |
 
@@ -42,7 +43,7 @@ Les deux journaux transmis pour **0.4-13.60.1** montrent **23 requêtes A bloqu�
 
 Un fichier de blocklist peut être modifié ou contourné par une exception. Un payload mal géré peut également perturber l'arrêt ou le chargement en double.
 
-**Ce projet indépendant, basé sur [nanoDNS par Drakmor](https://github.com/drakmor/nanoDNS)** intègre les **124 règles** de [niakw Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) **dans le programme lui-même**. Elles sont vérifiées avant les exceptions utilisateur. Les noms autorisés continuent de passer par **Control D et AdGuard sans filtrage**.
+**Ce projet indépendant, basé sur [nanoDNS par Drakmor](https://github.com/drakmor/nanoDNS)** conserve les **124 règles canoniques** de [niakw Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) et étend la Release à **1719 règles obligatoires compilées**. Elles sont vérifiées avant les exceptions utilisateur. Les noms autorisés continuent de passer par **Control D et AdGuard sans filtrage**.
 
 L'objectif est une protection DNS mieux définie et un fonctionnement plus stable, sans supprimer inutilement l'accès au Web.
 
@@ -50,7 +51,7 @@ L'objectif est une protection DNS mieux définie et un fonctionnement plus stabl
 
 | Fonction | nanoDNS original | Blocklist seule | **Notre version indépendante renforcée** |
 | --- | --- | --- | --- |
-| Règles livrées par défaut | **8** | **124** | **124 obligatoires compilées** |
+| Règles livrées par défaut | **8** | **124** | **1719 obligatoires compilées** |
 | Exceptions par défaut | **6** | **0** | Ne peuvent pas neutraliser les motifs obligatoires |
 | DNS amont | 3 fournisseurs | Control D + AdGuard | **Control D puis AdGuard sans filtrage** |
 | Questions DNS non standards | Comportement d'origine | Hérité | Refus sans retransmission non contrôlée |
@@ -69,11 +70,11 @@ Les 124 motifs obligatoires sont évalués avant toute exception. Pour les noms 
 
 ## Tu utilises déjà le nanoDNS 0.4 officiel ?
 
-**Télécharge notre ZIP complet : [nanoDNS 13.60 prêt à copier](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip).** Deux fichiers seulement, avec les bons emplacements.
+**Télécharge notre ZIP complet : [nanoDNS 13.60 prêt à copier](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.4/nanodns-13.60-v0.4-13.60.4-install.zip).** Deux fichiers seulement, avec les bons emplacements.
 
 Après sauvegarde, **supprime l'ancien nanoDNS depuis Payload Manager ou désactive-le et enlève son autoload**. Arrête ensuite proprement son processus (ou éteins puis redémarre complètement la console). Décompresse le ZIP sur ton Mac, copie son dossier `data/` vers la **racine de la console**, relance Payload Manager et active **seulement `local/nanodns`** en boot auto. **Ne réutilise pas** le bouton Update du nanoDNS officiel ni son ancien dossier `repo/nanodns@e8cce5d1`.
 
-[**Guide de migration pas à pas (français)**](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [English upgrade guide](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Release et fichiers séparés](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.3)
+[**Guide de migration pas à pas (français)**](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [English upgrade guide](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Release et fichiers séparés](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.4)
 
 ## Fiabilité et installation
 
@@ -83,12 +84,12 @@ Notre version renforce l'application des règles et le cycle de vie du processus
 
 ```text
 /data/pldmgr/payloads/local/nanodns/nanodns.elf
-/data/nanodns/nanodns.ini
+/data/nanodns/nanodns4096.ini
 ```
 
 Copie l'arborescence `data/` du ZIP à la **racine `/`**, pas dans `/data/` une seconde fois. Ensuite, actualise Payload Manager, active uniquement `local/nanodns` en autoload et garde les deux DNS console sur `127.0.0.1`. Le ZIP **ne modifie pas automatiquement** le boot auto. Prévois un blocage WAN externe IPv4/IPv6 si tu veux une interdiction stricte des connexions.
 
-**[Télécharger le ZIP](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip)** · [Guide français](docs/INSTALL.fr.md) · [English instructions](docs/INSTALL.md) · [Tests console](docs/TEST_PLAN.fr.md)
+**[Télécharger le ZIP](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.4/nanodns-13.60-v0.4-13.60.4-install.zip)** · [Guide français](docs/INSTALL.fr.md) · [English instructions](docs/INSTALL.md) · [Tests console](docs/TEST_PLAN.fr.md)
 
 ## Notre projet est-il prêt pour un usage stable ?
 
@@ -110,6 +111,6 @@ Code original : [Drakmor](https://github.com/drakmor/nanoDNS). Règles : [niakw 
 
 **Des protections mesurables. Des limites documentées.**
 
-### Profil étendu optionnel (source uniquement)
+### Profil de politique de la Release
 
-[`nanodns4096.ini`](nanodns4096.ini) : 1719 règles, 36 règles exactes redondantes supprimées hors des 124 règles obligatoires. Limites source : 4 096 overrides et 4 096 exceptions, fichier INI de 4 Mio maximum. Inventaire indicatif, non exhaustivement vérifié par trafic réel. Ne pas installer avec l'ELF publié 0.4-13.60.3. Le profil standard reste inchangé.
+[`nanodns4096.ini`](nanodns4096.ini) : **1719 règles obligatoires**, dont le noyau canonique de 124 règles. Limites runtime : 4 096 overrides et 4 096 exceptions, INI de 4 Mio maximum. Le test matériel .4 du 28 novembre a exercé ce profil directement ; l'inventaire DNS reste indicatif et ne prouve pas une couverture exhaustive.

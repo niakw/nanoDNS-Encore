@@ -4,7 +4,7 @@
 
 ## Ce que protège le fork
 
-La liste obligatoire de 124 motifs provient de [nanoDNS Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). Les requêtes UDP DNS reçues par le payload **en cours d'exécution** sont vérifiées **avant** les exceptions utilisateur. Un nom bloqué reçoit `0.0.0.0` pour une question A et aucune adresse pour AAAA ou d'autres types. Les questions multiples ou non prises en charge ne sont pas retransmises telles quelles.
+La liste obligatoire 0.4-13.60.4 contient **1719 motifs**, dont le noyau canonique de 124 règles issu de [nanoDNS Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). Les requêtes UDP DNS reçues par le payload **en cours d'exécution** sont vérifiées **avant** les exceptions utilisateur. Un nom bloqué reçoit `0.0.0.0` pour une question A et aucune adresse pour AAAA ou d'autres types. Les questions multiples ou non prises en charge ne sont pas retransmises telles quelles.
 
 Le programme vérifie également les réponses des résolveurs amont, refuse certains alias associés à des noms interdits, n'élimine plus les instances précédentes par `SIGKILL` et refuse un démarrage partiel sans écoute IPv4.
 
@@ -32,13 +32,14 @@ Les fichiers INI peuvent encore ajouter des règles, mais ne doivent pas pouvoir
 
 Un **build vert** ne confirme pas la résolution des problèmes d'extinction de la console 13.60. Voir le [protocole de tests](docs/TEST_PLAN.fr.md).
 
-## Durcissement de la configuration sur le code source actuel
 
-Le code `main` n'utilise plus de tableaux fixes de 128 entrées pour les overrides ou les exceptions. Ces deux listes sont désormais allouées dynamiquement sur le tas pendant la lecture de l'INI ; le fichier est borné à 64 Kio afin de limiter le travail de parsing et la consommation mémoire. Les 124 motifs obligatoires restent compilés séparément dans l'ELF et ne dépendent donc pas de cette capacité. L'ELF publié en 0.4-13.60.3 est antérieur à ce refactoring et conserve la table historique de 128 entrées. Cette modification du code source devra être reconstruite et qualifiée sur console avant d'être présentée comme un comportement de Release.
+## Durcissement de la configuration dans 0.4-13.60.4
 
-## Protection du fichier de configuration (code après la Release 13.60)
+La Release utilise un stockage dynamique borné à **4 096 overrides + 4 096 exceptions**, avec un INI limité à **4 Mio**. Les 1719 règles obligatoires sont compilées dans l'ELF. `nanodns4096.ini` est prioritaire ; l'ancien `nanodns.ini` sert uniquement de repli et les deux ne sont jamais fusionnés.
 
-Le code du dépôt utilise désormais `open()` avec `O_CREAT | O_EXCL | O_NOFOLLOW` et des permissions initiales `0600` : l'INI n'est créé que s'il n'existe pas et un ancien fichier n'est pas écrasé. La lecture refuse les liens symboliques et les fichiers non ordinaires. En cas d'échec, les règles obligatoires compilées restent utilisées. **Ce durcissement du code source n'est pas encore présent dans l'ELF de la Release déjà publiée et testé sur console.** Il ne protège pas contre la modification privilégiée de tout le dossier d'exécution.
+La création utilise `open(O_CREAT | O_EXCL | O_NOFOLLOW, 0600)`. La lecture utilise `O_NOFOLLOW` et valide un fichier ordinaire. Un profil sélectionné dangereux déclenche la politique compilée.
+
+La trace .4 du 28 novembre valide démarrage, chargement du profil, réponses A protégées locales et résolutions A autorisées. Elle ne valide pas extinction/veille/réveil ni l'absence globale de fuite.
 
 ## Signaler un problème
 

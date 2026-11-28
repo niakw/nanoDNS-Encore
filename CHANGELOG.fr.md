@@ -2,10 +2,15 @@
 
 **Langues :** [English (default)](CHANGELOG.md) | Français
 
-## Non publié — code source après 0.4-13.60.3
 
-- Remplacement des tableaux fixes `MAX_RULES=128` et `MAX_EXCEPTIONS=128` par un stockage dynamique des overrides et exceptions sur le tas. Le fichier INI est limité à 4 Mio au lieu de tronquer silencieusement les règles au-delà de 128 ; les 124 motifs obligatoires restent une politique compilée séparée et gardent leur priorité.
-- Cette évolution reste limitée au code source jusqu'à reconstruction et qualification d'un nouvel ELF pour console de génération actuelle ; l'ELF 0.4-13.60.3 publié conserve les tables historiques de 128 overrides et 128 exceptions.
+## 0.4-13.60.4 — profil étendu publié, test utilisateur du chemin DNS réussi sur firmware 13.60 (28 novembre 2026)
+
+- Stockage dynamique borné en comportement de Release : 4 096 overrides + 4 096 exceptions, INI limité à 4 Mio.
+- Publication et compilation de `nanodns4096.ini` avec 1719 règles, dont le noyau canonique historique de 124 règles.
+- Priorité à `nanodns4096.ini` ; `nanodns.ini` sert uniquement de repli, sans fusion ni double gestion.
+- Attentes d'arrêt des listeners bornées et journalisation de démarrage allégée sans changement de politique.
+- Journal matériel : 1719 règles / 0 exception, deux écoutes loopback, **15/15 requêtes A protégées bloquées localement** et **7/7 requêtes A autorisées résolues en amont**, aucune erreur runtime visible.
+- Extinction/veille/réveil, AAAA, secours vers les DNS suivants, cycles répétés et endurance restent à tester.
 
 ## 0.4-13.60.3 — migration DNS (24 novembre 2026)
 

@@ -4,7 +4,7 @@
 **Language:** English (default) | [Français](SECURITY.fr.md)
 ## What this fork protects
 
-The built-in denylist contains 124 masks from [nanoDNS Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). Matching queries handled by this **running** UDP DNS payload are answered locally, before configured exceptions are considered. AAAA and other types are answered without the matching IPv4 address; unsupported multi-question / non-IN requests are not relayed.
+The 0.4-13.60.4 built-in denylist contains **1719 mandatory masks**, including the 124-rule canonical core from [nanoDNS Console Blocklist](https://github.com/niakw/nanodns-console-blocklist). Matching queries handled by this **running** UDP DNS payload are answered locally, before configured exceptions are considered. AAAA and other types are answered without the matching IPv4 address; unsupported multi-question / non-IN requests are not relayed.
 
 The payload additionally validates upstream reply identity, blocks protected alias names in answer sections, avoids forcible termination of old payload processes and refuses to start when the required IPv4 listener cannot bind.
 
@@ -19,7 +19,7 @@ The bundled policy uses Control D (unfiltered), then AdGuard DNS (non-filtering)
 - Cold boot or shutdown intervals before the payload starts, and failed jailbreak starts.
 - Direct IPv4/IPv6 connections, cached addresses, direct package installation from local storage.
 - Alternate resolvers, DNS-over-HTTPS / DNS-over-TLS, DNS-over-TCP and app-specific network stacks.
-- New or hidden service domains not matching the 124 known rules; service traffic on unrelated CDN names.
+- New or hidden service domains not matching the 1719-rule best-effort inventory; service traffic on unrelated CDN names.
 - Hardware controller wake, suspend/resume of the OS, full kernel-lifecycle or network stack correctness.
 
 If you need *no unfiltered outbound traffic*, enforce WAN-deny rules on your **router/firewall**, including IPv6, even when the console is off or being jailbroken. Keep the locally hosted jailbreak path available.
@@ -28,18 +28,19 @@ If you need *no unfiltered outbound traffic*, enforce WAN-deny rules on your **r
 
 - Rules such as `<hostname-or-mask-from-INI>`, `<hostname-or-mask-from-INI>`, `<hostname-or-mask-from-INI>` are intentionally broad and can block innocent names. `<hostname-or-mask-from-INI>` is a shared-CDN alias and may affect unrelated services.
 - `bind=0.0.0.0` / `bind6=::` makes the resolver available on LAN; default loopback listeners are safer.
-- A manually edited `nanodns.ini` may contain extra forwarders, exceptions or overrides. The embedded 124 mandatory masks cannot be overridden by exceptions but extra rules can still cause false positives.
+- A manually edited selected INI may contain extra forwarders, exceptions or overrides. The embedded 1719 mandatory masks cannot be overridden by exceptions but extra rules can still cause false positives.
 - UDP upstream DNS is not encrypted or DNSSEC-validated. Response question/ID validation is useful defense-in-depth, not authentication.
 - DNS logs can contain domain names, network addresses and timestamps. Review and redact before sharing.
 - A successful SDK build is not proof of safe shutdown on console 13.60. Observe [test plan](docs/TEST_PLAN.md).
 
-## Runtime configuration hardening on current source
 
-The current `main` source no longer stores overrides or exceptions in fixed 128-entry stack arrays. Both policy lists are allocated on the heap as the configuration is parsed; the INI itself is bounded to 64 KiB to keep memory use and parsing work finite. The 124 mandatory masks remain separately compiled into the ELF and therefore do not depend on user override capacity. The published 0.4-13.60.3 binary predates this refactor and still has the historical 128-entry override and 128-entry exception tables. This source change requires a new build and hardware qualification before it is presented as a release behavior.
+## Runtime configuration hardening in 0.4-13.60.4
 
-## Default configuration file protection (source after the 13.60 release)
+The release uses bounded dynamic heap storage for **4,096 overrides + 4,096 exceptions**, with a **4 MiB** INI ceiling. The 1719 mandatory masks are compiled into the ELF. `nanodns4096.ini` is preferred; legacy `nanodns.ini` is used only when the preferred file is absent and the two are never merged.
 
-The repository source now uses an exclusive `open()` with `O_CREAT | O_EXCL | O_NOFOLLOW` and mode `0600` to create the default INI only when absent. Existing configurations are not truncated. Reading the INI also uses `O_NOFOLLOW` and verifies a regular file; unreadable or unsafe files lead to compiled mandatory fallback rules. This **source hardening is not included in the currently published user-tested release ELF** until a new binary is published and checked. It does not protect against privileged changes to the whole runtime directory.
+Default-file creation uses exclusive `open(O_CREAT | O_EXCL | O_NOFOLLOW, 0600)`. Reads use `O_NOFOLLOW` plus regular-file validation. Unsafe selected profiles fall back to compiled policy.
+
+The 28 November .4 trace validates startup, selected-profile loading, protected local A replies and permitted A resolution. It does not validate shutdown/rest/wake or system-wide no-leak behavior.
 
 ## Reports
 

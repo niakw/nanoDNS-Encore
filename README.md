@@ -4,9 +4,9 @@
 
 ### Stronger DNS enforcement. Cleaner shutdown. One auditable payload.
 
-**124 mandatory protected patterns · Control D + AdGuard DNS · Native checks · Safer process lifecycle**
+**1719 mandatory protected patterns · Control D + AdGuard DNS · Native checks · Safer process lifecycle**
 
-[![Protected masks](https://img.shields.io/badge/Mandatory_rules-124-394965)](nanodns.ini)
+[![Protected masks](https://img.shields.io/badge/Mandatory_rules-1719-394965)](nanodns4096.ini)
 [![Resolver](https://img.shields.io/badge/DNS-Control_D%20%2B%20AdGuard-456b90)](docs/DNS_POLICY.md)
 [![License](https://img.shields.io/badge/License-GPL--3.0-555)](LICENSE)
 
@@ -18,17 +18,14 @@
 
 ---
 
-## Current source after 0.4-13.60.3
 
-`main` no longer has the historical 128-entry override/exception tables. Runtime overrides and exceptions now use bounded dynamic storage, with the whole INI capped at 4 MiB; host tests target 4,096 overrides plus 4,096 exceptions under ASan/UBSan. The **published 0.4-13.60.3 ELF still has the old 128-entry tables** until a new binary is built and hardware-qualified. The 124 mandatory masks remain compiled separately and keep priority.
+## Release 0.4-13.60.4 — extended mandatory profile, user-tested on 28 November 2026
 
-## Release 0.4-13.60.3 — DNS migration (24 November 2026)
+**0.4-13.60.4 is USER-TESTED on firmware 13.60 for startup, profile selection, protected A-query blocking and permitted A-query upstream resolution.** The submitted runtime log identifies the .4 development build used to qualify this release behavior, selects `/data/nanodns/nanodns4096.ini`, loads **1719 rules / 0 exceptions**, opens both loopback listeners, answers **15/15 observed protected A queries locally with `0.0.0.0`**, and returns **7/7 observed permitted A queries through the first configured upstream**. No runtime error is visible in the supplied trace.
 
-**0.4-13.60.3 uses Control D (unfiltered) first and AdGuard DNS (non-filtering) as fallback. NOT YET USER-TESTED on hardware.** Quad9 ceased serving French users on 24 November 2026. New upstream order: `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Each resolver gets its own 1500 ms response window; SERVFAIL/REFUSED also advance to the next resolver. The original 124 mandatory masks remain unchanged. No additional malware or ad filtering is provided by these upstream profiles. Replace both ELF and INI; keep both console DNS fields at `127.0.0.1`.
+The release keeps bounded dynamic policy storage (**4096 overrides + 4096 exceptions**, 4 MiB INI ceiling). The original 124-rule canonical core remains included in the 1719 mandatory masks. `nanodns4096.ini` is selected first; `nanodns.ini` is a compatibility fallback only when the preferred file is absent. The two files are never merged.
 
-## Current source after 0.4-13.60.3 — policy capacity refactor
-
-The historical fixed **128-entry override table and 128-entry exception table are no longer present on `main`**. Current source uses bounded dynamic storage for both user policy lists, with a 4 MiB configuration-file limit; the 124 mandatory compiled masks remain separate and keep priority. CI targets **4,096 overrides + 4,096 exceptions** with the production storage functions under sanitizers. **The published 0.4-13.60.3 ELF still contains the historical 128-entry tables** until a new binary is built and hardware-qualified.
+**Validation boundary:** the supplied .4 trace does not contain a shutdown sequence and does not prove rest/resume, controller wake, AAAA behavior, failover to later upstreams, repeated power cycles or long-term stability.
 
 ## Historical Release 0.4-13.60.2 — hardware evidence
 
@@ -38,7 +35,7 @@ The historical fixed **128-entry override table and 128-entry exception table ar
 
 | Target | Real-user hardware status | Scope |
 | --- | --- | --- |
-| Current-generation console, firmware **13.60** | **0.4-13.60.1 and 0.4-13.60.2 USER-TESTED; prior version startup, DNS and shutdown/power-on passed; 0.4-13.60.3 retest pending** | Prior binary started, filtered A queries, and shut down/restarted without the reported issue. The 0.4-13.60.2 ELF passed 5/5 observed blocked A queries on firmware 13.60; user confirms its shutdown/power-on also passed |
+| Current-generation console, firmware **13.60** | **0.4-13.60.4 USER-TESTED for startup and DNS path; earlier 0.4-13.60.2 shutdown/power-on trial passed** | .4 loaded 1719/0, blocked 15/15 observed protected A queries and resolved 7/7 observed permitted A queries upstream. .4 shutdown/rest/wake remain unverified |
 | Current-generation console, **other firmware** | **NOT USER-VALIDATED** | SDK compilation and automated tests are not hardware validation |
 | Secondary/older-generation console build, **all firmware** | **NOT USER-VALIDATED** | Successful SDK compilation only; no real-user hardware report |
 
@@ -50,7 +47,7 @@ The two sanitized runtime logs from the **0.4-13.60.1** test showed **23 blocked
 
 A DNS denylist can be edited, replaced or bypassed through local exceptions. A runtime can also fail during duplicate launch or system shutdown.
 
-**nanoDNS 13.60 builds on [Drakmor's original nanoDNS](https://github.com/drakmor/nanoDNS)** and integrates the independent [124-rule Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) **directly into the binary**. Known protected names are evaluated **before** user-defined exceptions, while permitted DNS lookups still use **Control D and AdGuard non-filtering upstream resolvers**.
+**nanoDNS 13.60 builds on [Drakmor's original nanoDNS](https://github.com/drakmor/nanoDNS)** and retains the independent [124-rule Console Blocklist](https://github.com/niakw/nanodns-console-blocklist) as the canonical core and extends the release policy to **1719 mandatory masks compiled directly into the binary**. Known protected names are evaluated **before** user-defined exceptions, while permitted DNS lookups still use **Control D and AdGuard non-filtering upstream resolvers**.
 
 The goal is stronger **DNS-layer policy enforcement and process reliability** without unnecessarily breaking unrelated Internet access.
 
@@ -58,7 +55,7 @@ The goal is stronger **DNS-layer policy enforcement and process reliability** wi
 
 | Capability | Original nanoDNS v0.4 | Standalone blocklist | **Independent hardened runtime** |
 | --- | --- | --- | --- |
-| Shipped default deny rules | **8** | **124** in INI | **124 mandatory** masks in binary |
+| Shipped default deny rules | **8** | **124** in INI | **1719 mandatory** masks in binary |
 | Shipped default exceptions | **6** | **0** | No exception can override a mandatory protected name |
 | Upstream DNS | Three mixed resolvers | Control D + AdGuard | **Ordered Control D, then AdGuard** |
 | Special DNS questions | Original forwarding behavior | Original behavior | Reject unsupported or multiple questions |
@@ -77,7 +74,7 @@ The original software supports custom rules; the 8/6 values refer to its **uncha
 DNS query received by nanoDNS
               |
               v
-  Compiled mandatory 124 masks
+  Compiled mandatory 1719 masks
          /          \
     Protected     Not protected
         |              |
@@ -107,11 +104,11 @@ Control D and AdGuard provide independent upstream fallback in the configured or
 
 ## Already using Drakmor's original nanoDNS 0.4?
 
-**Use our single ready-to-copy ZIP:** [**nanoDNS 13.60 installation bundle**](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip).
+**Use our single ready-to-copy ZIP:** [**nanoDNS 13.60 installation bundle**](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.4/nanodns-13.60-v0.4-13.60.4-install.zip).
 
 After backing up the existing ELF/INI, **uninstall the original nanoDNS in Payload Manager or disable it and remove its autoload entry**, stop it through the manager when supported or shut down/restart the console cleanly. Then extract the ZIP on your computer, copy its `data/` tree to the **console filesystem root**, refresh Payload Manager, and enable **only `local/nanodns`** in autoload. **Do not** update the original repository/catalog entry or overwrite its existing `repo/nanodns@e8cce5d1` slot.
 
-[**Step-by-step migration guide (English)**](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Guide français](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [Release and standalone files](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.3)
+[**Step-by-step migration guide (English)**](docs/INSTALL.md#upgrade-from-drakmors-original-nanodns-04) · [Guide français](docs/INSTALL.fr.md#migration-depuis-le-nanodns-04-officiel-de-drakmor) · [Release and standalone files](https://github.com/niakw/nanoDNS-Encore/releases/tag/v0.4-13.60.4)
 
 ## Installation: ZIP first, English first
 
@@ -119,12 +116,12 @@ The recommended download is a **two-file installation ZIP**. Copy the extracted 
 
 ```text
 /data/pldmgr/payloads/local/nanodns/nanodns.elf
-/data/nanodns/nanodns.ini
+/data/nanodns/nanodns4096.ini
 ```
 
 Then refresh Payload Manager, enable only the `local/nanodns` autoload entry, keep **both console DNS fields at `127.0.0.1`**, and verify the new-session logs. The archive **does not** update Payload Manager's autoload on its own. An independent external firewall is still required for strict WAN isolation.
 
-**[Download installation ZIP](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.3/nanodns-13.60-v0.4-13.60.3-install.zip)** · [Complete English instructions](docs/INSTALL.md) · [Guide français](docs/INSTALL.fr.md) · [Validation plan](docs/TEST_PLAN.md)
+**[Download installation ZIP](https://github.com/niakw/nanoDNS-Encore/releases/download/v0.4-13.60.4/nanodns-13.60-v0.4-13.60.4-install.zip)** · [Complete English instructions](docs/INSTALL.md) · [Guide français](docs/INSTALL.fr.md) · [Validation plan](docs/TEST_PLAN.md)
 
 ## When can this independent project be considered stable?
 
@@ -146,6 +143,6 @@ This is **not a firewall**. Direct IP connections, alternative/encrypted DNS, ca
 
 **Secure what DNS can protect. Document what it cannot.**
 
-### Optional extended profile (source only)
+### Release policy profile
 
-[`nanodns4096.ini`](nanodns4096.ini): 1719 rules; 36 redundant exact rules removed outside the 124 mandatory rules. Source limits: 4,096 overrides and 4,096 exceptions, 4 MiB INI. Best-effort inventory, not exhaustively verified against live traffic. Do not install with the published 0.4-13.60.3 ELF. The standard profile is unchanged.
+[`nanodns4096.ini`](nanodns4096.ini): **1719 mandatory rules**, including the 124-rule canonical core. Runtime limits are 4,096 overrides and 4,096 exceptions with a 4 MiB INI ceiling. The 28 November .4 hardware trace exercised this profile directly; it remains a best-effort DNS inventory rather than proof of exhaustive endpoint coverage.
