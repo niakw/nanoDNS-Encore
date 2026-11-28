@@ -4142,7 +4142,7 @@ static int
 acquire_instance_lock(const char *path) {
   struct stat st;
   struct flock lock;
-  int fd = open(path, O_RDWR | O_CREAT | O_NOFOLLOW, 0600);
+  int fd = open(path, O_RDWR | O_CREAT | O_NOFOLLOW | O_NONBLOCK, 0600);
   if(fd < 0) return -1;
   if(fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
     int saved = errno ? errno : EINVAL;
@@ -4238,7 +4238,7 @@ load_config(const char *path, app_config_t *cfg) {
 
   /* Open the configuration itself (not a separately checked pathname).
    * Do not follow a replacement symlink or read a directory/device. */
-  int fd = open(path, O_RDONLY | O_NOFOLLOW);
+  int fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
   struct stat config_stat;
   if(fd < 0) {
     return -1;
@@ -4606,6 +4606,11 @@ dns_expand_name(const uint8_t *packet, size_t packet_len, size_t *offset,
       return -1;
     }
 
+    /* Text matching cannot safely represent embedded NUL or literal dots
+     * inside a wire label. Reject ambiguous names instead of forwarding. */
+    for(size_t j = 0; j < len; ++j) {
+      if(packet[cursor + j] == 0 || packet[cursor + j] == '.') return -1;
+    }
     memcpy(&output[out], &packet[cursor], len);
     out += len;
     cursor += len;
@@ -4666,13 +4671,14 @@ protected_domain_match(const char *domain) {
   return 0;
 }
 
-/* Reject protected hostnames hidden in a resolver's answer section.
- * Malformed answer records are refused, not passed to the client. */
+/* Check answer, authority and additional records before forwarding.
+ * Malformed records are refused, not passed to the client. */
 static int
 dns_response_has_blocked_target(const uint8_t *packet, size_t packet_len,
                                 const dns_question_t *question) {
   size_t cursor = question->question_end;
-  for(size_t i = 0; i < question->ancount; ++i) {
+  size_t records = (size_t)question->ancount + question->nscount + question->arcount;
+  for(size_t i = 0; i < records; ++i) {
     char owner[MAX_DOMAIN_LEN], target[MAX_DOMAIN_LEN];
     uint16_t type, rdlength;
     size_t rdata_start, name_cursor;

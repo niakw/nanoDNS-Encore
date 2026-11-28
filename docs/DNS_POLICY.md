@@ -14,7 +14,7 @@ The fork contains three synchronized snapshots: `nanodns.ini`, `nanodns.ini.exam
 2. Match against the **built-in mandatory masks**. If matched, answer A with `0.0.0.0`, AAAA and other types without resource records, without contacting upstream.
 3. Only for names **not matching** the mandatory masks, consult the user's optional `[exceptions]` and `[overrides]`.
 4. Forward remaining questions to configured IPv4 upstream DNS, and verify returned transaction ID, name, class, type and response flags.
-5. Reject upstream answers that name a protected host in an answer record or supported alias target (CNAME/DNAME/NS/PTR/MX/SRV/SVCB/HTTPS).
+5. Reject upstream answers that name a protected host in answer, authority or additional records and supported alias targets (CNAME/DNAME/NS/PTR/MX/SRV/SVCB/HTTPS).
 
 **Malformed data never needs to be forwarded** to maintain compatibility. This improves DNS-layer enforcement without being a firewall. An unknown hostname or direct IP can still reach an unwanted service.
 
@@ -42,3 +42,5 @@ Once an override is selected, its request never enters the upstream forwarding p
 Development candidate 0.4-13.60.4 uses the 1719-rule extended profile as its compiled mandatory policy and generated default. Candidate archives install the extended INI under its own filename. Historical release files remain unchanged. Existing local configs are not overwritten automatically; compiled masks still apply. Hardware qualification is pending.
 
 Development candidates select `/data/nanodns/nanodns4096.ini` first, or `/data/nanodns/nanodns.ini` only when the preferred path does not exist. If both are absent, create the preferred file. Do not merge, rewrite or read both profiles. An invalid selected file uses explicitly logged compiled defaults, never the other file. Compiled mandatory masks remain enforced even when the legacy INI is selected; the old binary and legacy profile remain compatible independently.
+
+The wire parser refuses ambiguous labels containing embedded NUL or literal dots. Configuration opens are nonblocking before regular-file validation. These are source-level hardening measures, not hardware qualification.
