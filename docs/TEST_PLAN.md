@@ -2,11 +2,21 @@
 
 **Language:** English (default) | [Français](TEST_PLAN.fr.md)
 
-**Status: standard GitHub Release; one positive firmware 13.60 user test, with further validation pending.** Source tests and SDK builds alone cannot establish that console shutdown, controller power-on or standby are fixed.
+**Status: standard GitHub Release; 0.4-13.60.4 DNS-path user test passed on firmware 13.60, with lifecycle and protocol checks still pending.** Source tests and SDK builds alone cannot establish that console shutdown, controller power-on or standby are fixed.
 
-## Release 0.4-13.60.3 — DNS migration, hardware retest pending
 
-On 24 November 2026 Quad9 was replaced with Control D (unfiltered), then AdGuard DNS (non-filtering), in order `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. These profiles do not add malware/ad filtering; local mandatory rules remain unchanged. UDP DNS is unencrypted. Verify four upstreams in the log, the unchanged 124/0 profile, a permitted query through Control D and failover to AdGuard when prior resolvers are unavailable. Test timeout and SERVFAIL/REFUSED failover; NXDOMAIN remains valid. The new binary is not user-tested; the following reports apply only to previous binaries.
+## Release 0.4-13.60.4 — user hardware DNS-path test (28 November 2026)
+
+**USER-TESTED: startup, preferred-profile loading, protected A-query blocking and permitted A-query upstream resolution PASSED on firmware 13.60.** The submitted log identifies `NanoDNS v0.4-13.60.4-dev`, the development build used to qualify this release behavior.
+
+- Preferred config selected: `/data/nanodns/nanodns4096.ini`.
+- **1719 rules**, **0 exceptions**, **4 upstreams**, timeout **1500 ms**.
+- Both listeners opened: `127.0.0.1:53` and `[::1]:53`.
+- **15/15 observed protected A queries** were answered locally with `0.0.0.0`.
+- **7/7 observed permitted A queries** returned successful answers through the first configured upstream.
+- No runtime error appears in the supplied trace.
+
+**Not established by this trace:** shutdown completion, controller wake, rest/resume, AAAA, later-upstream failover, repeated cycles, endurance, or packet-capture proof of system-wide no-leak behavior.
 
 ## Release 0.4-13.60.2 — user hardware test (19 November 2026)
 
@@ -42,7 +52,7 @@ Two user-supplied log generations (`nanodns.log` and `nanodns.log.previous`) sho
 
 ## 1. Offline and CI checks
 
-- `python3 -m unittest discover -s tests -v`: verify the 124 mandatory masks, zero-exception default profile, matching INI files, ordered Control D/AdGuard addresses and native matching tests.
+- `python3 -m unittest discover -s tests -v`: verify the 1719 mandatory masks, zero-exception default profile, matching INI files, ordered Control D/AdGuard addresses and native matching tests.
 - Build the console ELF with the supported SDK; verify the artifact exists and is non-empty. Also compile the secondary compatibility target.
 - Check the current **main commit**, not only an older successful run. Never present a build as validated hardware behavior.
 
@@ -50,7 +60,7 @@ Two user-supplied log generations (`nanodns.log` and `nanodns.log.previous`) sho
 
 Back up the old ELF, `/data/nanodns/nanodns.ini`, logs and important saves. Keep the console WAN-denied through an independent router/firewall rule (IPv4 and IPv6), while preserving LAN/FTP and a local loader.
 
-Confirm one autoload mechanism and exactly one nanoDNS process. Transfer the 124-rule `nanodns.ini` explicitly; the payload deliberately does not overwrite an existing profile.
+Confirm one autoload mechanism and exactly one nanoDNS process. Transfer the 1719-rule `nanodns4096.ini` explicitly; keep legacy `nanodns.ini` only as fallback when the preferred file is absent.
 
 ## 3. DNS security matrix
 

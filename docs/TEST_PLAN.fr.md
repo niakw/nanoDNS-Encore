@@ -2,11 +2,21 @@
 
 **Langues :** [English (default)](TEST_PLAN.md) | Français
 
-**Statut : Release GitHub standard ; premier test utilisateur positif sur firmware 13.60, autres vérifications en attente.** Un build seul ne prouve ni une extinction correcte, ni un réveil à la manette, ni une reprise de veille fiable.
+**Statut : Release GitHub standard ; test utilisateur du chemin DNS 0.4-13.60.4 réussi sur firmware 13.60, vérifications de cycle de vie/protocole encore ouvertes.** Un build seul ne prouve ni une extinction correcte, ni un réveil à la manette, ni une reprise de veille fiable.
 
-## Release 0.4-13.60.3 — migration DNS, nouvel essai matériel nécessaire
 
-Depuis le 24 novembre 2026 : Control D sans filtrage, puis AdGuard DNS sans filtrage, dans l'ordre `76.76.2.0`, `76.76.10.0`, `94.140.14.140`, `94.140.14.141`. Aucun filtrage antimalware/publicitaire supplémentaire ; les règles locales restent inchangées. DNS UDP non chiffré. Vérifier les quatre DNS amont, 124 règles et zéro exception, une résolution autorisée via Control D et le secours AdGuard si les DNS précédents sont indisponibles. Tester timeout et SERVFAIL/REFUSED ; NXDOMAIN reste valide. Le nouveau binaire n'est pas encore testé par utilisateur ; les résultats ci-dessous concernent les anciennes versions.
+## Release 0.4-13.60.4 — test utilisateur du chemin DNS (28 novembre 2026)
+
+**TEST UTILISATEUR RÉUSSI : démarrage, chargement du profil prioritaire, blocage A protégé et résolution A autorisée sur firmware 13.60.** Le journal transmis identifie `NanoDNS v0.4-13.60.4-dev`, build de développement utilisé pour qualifier ce comportement de Release.
+
+- Profil sélectionné : `/data/nanodns/nanodns4096.ini`.
+- **1719 règles**, **0 exception**, **4 DNS amont**, timeout **1 500 ms**.
+- Écoutes actives : `127.0.0.1:53` et `[::1]:53`.
+- **15/15 requêtes A protégées observées** répondues localement en `0.0.0.0`.
+- **7/7 requêtes A autorisées observées** résolues avec succès via le premier DNS amont.
+- Aucune erreur runtime visible dans la trace fournie.
+
+**Non démontré par cette trace :** fin d'extinction, réveil à la manette, veille/reprise, AAAA, basculement vers les DNS suivants, cycles répétés, endurance ou preuve par capture réseau de l'absence globale de fuite.
 
 ## Release 0.4-13.60.2 — test utilisateur du 19 novembre 2026
 
@@ -42,7 +52,7 @@ Deux générations de journaux transmises (`nanodns.log` et `nanodns.log.previou
 
 ## 1. Vérifications automatiques
 
-- `python3 -m unittest discover -s tests -v` : cohérence des 124 règles obligatoires, absence d'exceptions par défaut, correspondance entre INI et code, adresses Control D/AdGuard dans l'ordre et tests natifs.
+- `python3 -m unittest discover -s tests -v` : cohérence des 1719 règles obligatoires, absence d'exceptions par défaut, correspondance entre INI et code, adresses Control D/AdGuard dans l'ordre et tests natifs.
 - Compiler l'ELF avec le SDK compatible, vérifier sa présence et sa taille, puis vérifier aussi la compilation secondaire.
 - Contrôler le commit `main` actuel, pas uniquement un ancien build vert.
 
@@ -50,7 +60,7 @@ Deux générations de journaux transmises (`nanodns.log` et `nanodns.log.previou
 
 Sauvegarder l'ELF d'origine, `/data/nanodns/nanodns.ini`, les journaux et les sauvegardes utiles. Bloquer le WAN au niveau du routeur/pare-feu en IPv4 et IPv6 tout en conservant le LAN/FTP et un chargeur local.
 
-Vérifier qu'un seul mécanisme d'autoload est actif et qu'une seule instance nanoDNS est chargée. Transférer explicitement les 124 règles : le payload n'écrase pas les INI existants.
+Vérifier qu'un seul mécanisme d'autoload est actif et qu'une seule instance nanoDNS est chargée. Transférer explicitement `nanodns4096.ini` avec ses 1719 règles ; conserver `nanodns.ini` uniquement comme repli si le profil prioritaire est absent.
 
 ## 3. Matrice DNS
 
