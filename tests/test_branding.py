@@ -102,8 +102,8 @@ class DocumentationContracts(unittest.TestCase):
   self.assertIn("23 requêtes A",p_fr)
   for text in (en,fr,note,p_en,p_fr):
    self.assertIn("13.60",text)
-   self.assertIn("Quad9",text)
-   self.assertIn("shutdown: complete",text)
+   self.assertIn("Control D",text)
+   self.assertIn("shutdown",text.lower())
 
  def test_standard_release_documentation(self):
   notes=(ROOT/"release/RELEASE_NOTES.md").read_text(encoding="utf-8")

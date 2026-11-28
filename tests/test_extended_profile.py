@@ -1,4 +1,4 @@
-"""Validate the optional extended profile without making it the release default."""
+"""Validate the 0.4-13.60.4 extended release profile and legacy compatibility."""
 from pathlib import Path
 import unittest
 import fnmatch
@@ -27,7 +27,7 @@ def parse(path):
     return rules, exceptions
 
 class ExtendedProfileTests(unittest.TestCase):
-    def test_extended_profile_is_a_superset_not_the_canonical_policy(self):
+    def test_release_profile_preserves_canonical_prefix(self):
         base, base_exc = parse(BASE)
         extended, ext_exc = parse(EXT)
         self.assertEqual(len(base), 124)
@@ -40,20 +40,20 @@ class ExtendedProfileTests(unittest.TestCase):
         self.assertTrue(all(ip == "0.0.0.0" for _, ip in extended))
         self.assertLess(EXT.stat().st_size, 4096 * 1024)
 
-    def test_historical_release_packaging_unchanged(self):
-        for rel in (
-            ".github/workflows/publish-rc.yml",
-            ".github/workflows/package-install-zip.yml",
-        ):
-            text = (ROOT / rel).read_text(encoding="utf-8")
-            self.assertIn("nanodns.ini", text)
-            self.assertNotIn("nanodns4096.ini", text)
+    def test_release_and_historical_packaging_are_separate(self):
+        publisher = (ROOT / ".github/workflows/publish-rc.yml").read_text(encoding="utf-8")
+        historical = (ROOT / ".github/workflows/package-install-zip.yml").read_text(encoding="utf-8")
+        self.assertIn("nanodns4096.ini", publisher)
+        self.assertIn("v0.4-13.60.4", publisher)
+        self.assertIn("nanodns.ini", historical)
+        self.assertNotIn("nanodns4096.ini", historical)
 
-    def test_header_marks_profile_candidate_and_unqualified(self):
+    def test_header_marks_profile_as_release_and_user_tested(self):
         header = "\n".join(EXT.read_text(encoding="utf-8").splitlines()[:16]).lower()
-        self.assertIn("development candidates", header)
-        self.assertIn("not hardware-qualified", header)
-        self.assertIn("4096", header)
+        self.assertIn("0.4-13.60.4", header)
+        self.assertIn("user-tested", header)
+        self.assertIn("runtime capacity 4096", header)
+        self.assertNotIn("not hardware-qualified", header)
 
     def test_publisher_families_and_shared_service_negatives(self):
         rules, _ = parse(EXT)
